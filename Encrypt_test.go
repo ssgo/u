@@ -1,16 +1,17 @@
-package utility
+package u_test
 
 import (
 	"fmt"
+	"github.com/ssgo/u"
 	"testing"
 )
 
 func TestEncodeInt(t *testing.T) {
-	fmt.Println(string(EncodeInt(GlobalRand2.Uint64())))
+	fmt.Println(string(u.EncodeInt(u.GlobalRand2.Uint64())))
 	for i := 0; i < 100000; i++ {
-		n := GlobalRand2.Uint64()
-		s := EncodeInt(uint64(n))
-		n2 := DecodeInt(s)
+		n := u.GlobalRand2.Uint64()
+		s := u.EncodeInt(uint64(n))
+		n2 := u.DecodeInt(s)
 		if n2 != n {
 			t.Error("decode not match ", s, n, n2)
 		}
@@ -24,8 +25,8 @@ func TestAes(t *testing.T) {
 
 	key := []byte("vpL54DlR2KG{JSAaAX7Tu;*#&DnG`M0o")
 	iv := []byte("@z]zv@10-K.5Al0Dm`@foq9k\"VRfJ^~j")
-	encrypted := EncryptAes(testString, key, iv)
-	decrypted := DecryptAes(encrypted, key, iv)
+	encrypted := u.EncryptAes(testString, key, iv)
+	decrypted := u.DecryptAes(encrypted, key, iv)
 
 	if decrypted != testString {
 		t.Error("Decrypt failed", encrypted, decrypted)

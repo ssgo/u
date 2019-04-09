@@ -1,15 +1,16 @@
-package utility
+package u_test
 
 import (
 	"fmt"
+	"github.com/ssgo/u"
 	"testing"
 )
 
 func TestUniqueId(t *testing.T) {
-	fmt.Println(UniqueId())
+	fmt.Println(u.UniqueId())
 	uids := map[string]bool{}
 	for i := 0; i < 100000; i++ {
-		uid := UniqueId()
+		uid := u.UniqueId()
 		if uids[uid] {
 			t.Error("unique id repeated ", uids, uid)
 		}

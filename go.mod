@@ -1,3 +1,3 @@
-module github.com/ssgo/utility
+module github.com/ssgo/u
 
 go 1.12
