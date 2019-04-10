@@ -1,7 +1,9 @@
 package u
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"strconv"
 )
 
@@ -108,6 +110,13 @@ func String(value interface{}) string {
 		return realValue
 	case []byte:
 		return string(realValue)
+	}
+	t := reflect.TypeOf(value)
+	if t.Kind() == reflect.Struct || t.Kind() == reflect.Map || t.Kind() == reflect.Slice {
+		j, err := json.Marshal(value)
+		if err == nil {
+			return string(j)
+		}
 	}
 	return fmt.Sprint(value)
 }
