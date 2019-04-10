@@ -50,65 +50,65 @@ const (
 	BgNone  BgColor = 0
 )
 
-func Black(s string, attribs ...AttribCode) string {
+func Black(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextBlack, BgNone, attribs...)
 }
-func Red(s string, attribs ...AttribCode) string {
+func Red(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextRed, BgNone, attribs...)
 }
-func Green(s string, attribs ...AttribCode) string {
+func Green(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextGreen, BgNone, attribs...)
 }
-func Yellow(s string, attribs ...AttribCode) string {
+func Yellow(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextYellow, BgNone, attribs...)
 }
-func Blue(s string, attribs ...AttribCode) string {
+func Blue(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextBlue, BgNone, attribs...)
 }
-func Magenta(s string, attribs ...AttribCode) string {
+func Magenta(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextMagenta, BgNone, attribs...)
 }
-func Cyan(s string, attribs ...AttribCode) string {
+func Cyan(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextCyan, BgNone, attribs...)
 }
-func White(s string, attribs ...AttribCode) string {
+func White(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextWhite, BgNone, attribs...)
 }
-func Dim(s string) string {
+func Dim(s interface{}) string {
 	return Color(s, TextWhite, BgNone, AttrDim)
 }
-func Italic(s string) string {
+func Italic(s interface{}) string {
 	return Color(s, TextWhite, BgNone, AttrItalic)
 }
 
-func BBlack(s string, attribs ...AttribCode) string {
+func BBlack(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextWhite, BgBlack, attribs...)
 }
-func BRed(s string, attribs ...AttribCode) string {
+func BRed(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextWhite, BgRed, attribs...)
 }
-func BGreen(s string, attribs ...AttribCode) string {
+func BGreen(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextBlack, BgGreen, attribs...)
 }
-func BYellow(s string, attribs ...AttribCode) string {
+func BYellow(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextBlack, BgYellow, attribs...)
 }
-func BBlue(s string, attribs ...AttribCode) string {
+func BBlue(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextWhite, BgBlue, attribs...)
 }
-func BMagenta(s string, attribs ...AttribCode) string {
+func BMagenta(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextWhite, BgMagenta, attribs...)
 }
-func BCyan(s string, attribs ...AttribCode) string {
+func BCyan(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextBlack, BgCyan, attribs...)
 }
-func BWhite(s string, attribs ...AttribCode) string {
+func BWhite(s interface{}, attribs ...AttribCode) string {
 	return Color(s, TextBlack, BgWhite, attribs...)
 }
 
-func Color(s string, textColor TextColor, bgColor BgColor, attribs ...AttribCode) string {
+func Color(s interface{}, textColor TextColor, bgColor BgColor, attribs ...AttribCode) string {
 	if runtime.GOOS == "windows" {
-		return s
+		return String(s)
 	}
 
 	sets := make([]string, 0)
@@ -122,5 +122,5 @@ func Color(s string, textColor TextColor, bgColor BgColor, attribs ...AttribCode
 		sets = append(sets, strconv.Itoa(int(bgColor)))
 	}
 
-	return fmt.Sprint("\033[", strings.Join(sets, ";"), "m", s, "\033[0m")
+	return fmt.Sprint("\033[", strings.Join(sets, ";"), "m", String(s), "\033[0m")
 }
