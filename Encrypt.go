@@ -77,7 +77,6 @@ func DecodeInt(buf []byte) uint64 {
 	return defaultIntEncoder.DecodeInt(buf)
 }
 
-
 func EncryptAes(origData string, key []byte, iv []byte) string {
 	key, iv = makeKeyIv(key, iv)
 	block, err := aes.NewCipher(key)
@@ -118,7 +117,11 @@ func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
 func pkcs5UnPadding(origData []byte) []byte {
 	length := len(origData)
 	unpadding := int(origData[length-1])
-	return origData[:(length - unpadding)]
+	pos := length - unpadding
+	if pos < 0 || pos >= length {
+		return nil
+	}
+	return origData[:pos]
 }
 
 func makeKeyIv(key []byte, iv []byte) ([]byte, []byte) {
