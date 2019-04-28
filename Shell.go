@@ -47,7 +47,7 @@ const (
 	BgMagenta
 	BgCyan
 	BgWhite
-	BgNone  BgColor = 0
+	BgNone BgColor = 0
 )
 
 func Black(s interface{}, attribs ...AttribCode) string {

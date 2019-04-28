@@ -18,7 +18,6 @@ func TestEncodeInt(t *testing.T) {
 	}
 }
 
-
 func TestAes(t *testing.T) {
 
 	testString := "Hello Password!"

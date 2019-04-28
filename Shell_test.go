@@ -8,7 +8,6 @@ import (
 
 func TestShell(t *testing.T) {
 
-
 	fmt.Print("  ", u.Black("Abc"))
 	fmt.Print("  ", u.Red("Abc"))
 	fmt.Print("  ", u.Green("Abc"))

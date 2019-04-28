@@ -17,3 +17,15 @@ func TestUniqueId(t *testing.T) {
 		uids[uid] = true
 	}
 }
+
+func TestShortUniqueId(t *testing.T) {
+	fmt.Println(u.ShortUniqueId(), len(u.ShortUniqueId()))
+	uids := map[string]bool{}
+	for i := 0; i < 100000; i++ {
+		uid := u.UniqueId()
+		if uids[uid] {
+			t.Error("short unique id repeated ", uids, uid)
+		}
+		uids[uid] = true
+	}
+}
