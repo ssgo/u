@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 func Int(value interface{}) int {
@@ -185,18 +186,22 @@ func Strings(value interface{}) []string {
 	return make([]string, 0)
 }
 
-func FixUpperCase(data []byte) {
+func FixUpperCase(data []byte, excludesKeys []string) {
 	n := len(data)
 	types := make([]bool, 0)
+	keys := make([]string, 0)
 	tpos := -1
 
 	for i := 0; i < n-1; i++ {
 		if tpos+1 >= len(types) {
 			types = append(types, false)
+			keys = append(keys, "")
 		}
+
 		if data[i] == '{' {
 			tpos++
 			types[tpos] = true
+			keys[tpos] = ""
 			//log.Println(" >>>1 ", types, tpos)
 		} else if data[i] == '}' {
 			tpos--
@@ -205,13 +210,57 @@ func FixUpperCase(data []byte) {
 		if data[i] == '[' {
 			tpos++
 			types[tpos] = false
+			keys[tpos] = ""
 			//log.Println(" >>>3 ", types, tpos)
 		} else if data[i] == ']' {
 			tpos--
 			//log.Println(" >>>4 ", types, tpos)
 		}
-		if data[i] == '"' && (data[i-1] == '{' || (data[i-1] == ',' && tpos >= 0 && types[tpos])) && (data[i+1] >= 'A' && data[i+1] <= 'Z') {
-			data[i+1] += 32
+		if data[i] == '"' {
+			keyPos := -1
+			if data[i-1] == '{' || (data[i-1] == ',' && tpos >= 0 && types[tpos]) {
+				keyPos = i + 1
+			}
+			// skip string
+			i++
+			for ; i < n-1; i++ {
+				if data[i] == '\\' {
+					i++
+					continue
+				}
+				if data[i] == '"' && excludesKeys != nil {
+					if keyPos >= 0 {
+						keys[tpos] = string(data[keyPos:i])
+					}
+					break
+				}
+			}
+
+			if keyPos >= 0 && (data[keyPos] >= 'A' && data[keyPos] <= 'Z') {
+				if excludesKeys != nil {
+					// 是否排除
+					excluded := false
+					for _, ek := range excludesKeys {
+						for j := tpos - 1; j >= 0; j-- {
+							if strings.Index(keys[j], ek) != -1 {
+								excluded = true
+								break
+							}
+						}
+						if excluded {
+							break
+						}
+					}
+					//fmt.Println("  ** >>", keys, excluded)
+					if !excluded {
+						data[keyPos] += 32
+					}
+				} else {
+					// 不进行排除判断
+					data[keyPos] += 32
+				}
+			}
+			continue
 		}
 	}
 }
