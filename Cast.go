@@ -228,8 +228,8 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 					i++
 					continue
 				}
-				if data[i] == '"' && excludesKeys != nil {
-					if keyPos >= 0 {
+				if data[i] == '"' {
+					if keyPos >= 0 && excludesKeys != nil {
 						keys[tpos] = string(data[keyPos:i])
 					}
 					break
