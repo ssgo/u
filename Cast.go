@@ -115,10 +115,7 @@ func String(value interface{}) string {
 	t := reflect.TypeOf(value)
 	if t != nil {
 		if t.Kind() == reflect.Struct || t.Kind() == reflect.Map || t.Kind() == reflect.Slice {
-			j, err := json.Marshal(value)
-			if err == nil {
-				return string(j)
-			}
+			return Json(value)
 		}
 	}
 	return fmt.Sprint(value)
@@ -284,4 +281,20 @@ func Switch(i uint, args ...interface{}) interface{} {
 		return args[i]
 	}
 	return nil
+}
+
+func Json(value interface{}) string {
+	j, err := json.Marshal(value)
+	if err == nil {
+		return string(j)
+	}
+	return fmt.Sprint(value)
+}
+
+func JsonP(value interface{}) string {
+	j, err := json.MarshalIndent(value, "", "  ")
+	if err == nil {
+		return string(j)
+	}
+	return fmt.Sprint(value)
 }
