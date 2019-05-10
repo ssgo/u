@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 )
 
 func RunCommand(command string, args ...string) ([]string, error) {
@@ -56,7 +57,7 @@ func ReadFile(fileName string) ([]string, error) {
 			break
 		}
 	}
-	fd.Close()
+	_ = fd.Close()
 	return outs, nil
 }
 
@@ -72,18 +73,26 @@ func CheckPath(fileName string) {
 	}
 	path := fileName[0:pos]
 	if _, err := os.Stat(path); err != nil {
-		os.MkdirAll(path, 0700)
+		_ = os.MkdirAll(path, 0700)
 	}
 }
+
+var fileLocks = map[string]*sync.Mutex{}
 
 func Load(fileName string, to interface{}) error {
 	CheckPath(fileName)
 
+	if fileLocks[fileName] == nil {
+		fileLocks[fileName] = new(sync.Mutex)
+	}
+	fileLocks[fileName].Lock()
+	defer fileLocks[fileName].Unlock()
+
 	fp, err := os.Open(fileName)
 	if err == nil {
-		defer fp.Close()
 		decoder := json.NewDecoder(fp)
 		err = decoder.Decode(&to)
+		_ = fp.Close()
 	}
 	return err
 }
@@ -91,13 +100,19 @@ func Load(fileName string, to interface{}) error {
 func Save(fileName string, data interface{}) error {
 	CheckPath(fileName)
 
+	if fileLocks[fileName] == nil {
+		fileLocks[fileName] = new(sync.Mutex)
+	}
+	fileLocks[fileName].Lock()
+	defer fileLocks[fileName].Unlock()
+
 	fp, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err == nil {
-		defer fp.Close()
 		var buf []byte
 		buf, err = json.MarshalIndent(data, "", "  ")
 		if err == nil {
-			fp.Write(buf)
+			_, err = fp.Write(buf)
+			_ = fp.Close()
 		}
 	}
 	return err
