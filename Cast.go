@@ -283,6 +283,24 @@ func Switch(i uint, args ...interface{}) interface{} {
 	return nil
 }
 
+func StringIn(arr []string, s string) bool {
+	for _, d := range arr {
+		if d == s {
+			return true
+		}
+	}
+	return false
+}
+
+func In(arr []interface{}, s interface{}) bool {
+	for _, d := range arr {
+		if d == s {
+			return true
+		}
+	}
+	return false
+}
+
 func Json(value interface{}) string {
 	j, err := json.Marshal(value)
 	if err == nil {
