@@ -238,6 +238,14 @@ func Strings(value interface{}) []string {
 	return make([]string, 0)
 }
 
+func ValueToString(v reflect.Value) string {
+	if v.Kind() == reflect.String {
+		return v.String()
+	} else {
+		return fmt.Sprint(v)
+	}
+}
+
 func GetLowerName(s string) string {
 	buf := []byte(s)
 	if buf[0] >= 'A' && buf[0] <= 'Z' {
@@ -425,7 +433,7 @@ func convertMapToStruct(from, to reflect.Value) {
 	keys := from.MapKeys()
 	keyMap := map[string]*reflect.Value{}
 	for j := len(keys) - 1; j >= 0; j-- {
-		keyMap[strings.ToLower(keys[j].String())] = &keys[j]
+		keyMap[strings.ToLower(ValueToString(keys[j]))] = &keys[j]
 	}
 
 	toType := to.Type()
@@ -443,6 +451,36 @@ func convertMapToStruct(from, to reflect.Value) {
 		}
 
 		if v.IsValid() && !v.IsNil() {
+			r := convert(v, to.Field(i))
+			if r != nil {
+				to.Field(i).Set(*r)
+			}
+		}
+	}
+}
+
+func convertStructToStruct(from, to reflect.Value) {
+	keyMap := map[string]int{}
+	fromType := from.Type()
+	for i := fromType.NumField() - 1; i >= 0; i-- {
+		keyMap[strings.ToLower(fromType.Field(i).Name)] = i + 1
+	}
+
+	toType := to.Type()
+	for i := toType.NumField() - 1; i >= 0; i-- {
+		f := toType.Field(i)
+		if f.Anonymous {
+			convertStructToStruct(from, to.Field(i))
+			continue
+		}
+
+		k := keyMap[strings.ToLower(f.Name)]
+		var v reflect.Value
+		if k != 0 {
+			v = from.Field(k - 1)
+		}
+
+		if v.IsValid() {
 			r := convert(v, to.Field(i))
 			if r != nil {
 				to.Field(i).Set(*r)
@@ -490,12 +528,18 @@ func convertSliceToSlice(from, to reflect.Value) *reflect.Value {
 	return &to
 }
 
-func Convert(from, to interface{}) interface{} {
+func Convert(from, to interface{}) {
 	r := convert(from, to)
-	if r == nil {
-		return to
-	} else {
-		return r.Interface()
+	if r != nil {
+		toValue := reflect.ValueOf(to)
+		var prevValue reflect.Value
+		for toValue.Kind() == reflect.Ptr {
+			prevValue = toValue
+			toValue = toValue.Elem()
+		}
+		if prevValue.IsValid() {
+			prevValue.Elem().Set(*r)
+		}
 	}
 }
 
@@ -513,6 +557,7 @@ func convert(from, to interface{}) *reflect.Value {
 	} else {
 		toValue = reflect.ValueOf(to)
 	}
+	//originToValue := toValue
 	FixNilValue(toValue)
 
 	fromValue = FinalValue(fromValue)
@@ -540,16 +585,19 @@ func convert(from, to interface{}) *reflect.Value {
 	case reflect.Slice:
 		if fromType.Kind() == reflect.Slice {
 			return convertSliceToSlice(fromValue, toValue)
-		}
-		if toType.Kind() == reflect.Slice && toType.Elem().Kind() == reflect.Uint8 {
+		} else if toType.Kind() == reflect.Slice && toType.Elem().Kind() == reflect.Uint8 {
 			toValue.SetBytes(Bytes(from))
+		} else {
+			tmpSlice := reflect.MakeSlice(reflect.SliceOf(fromType), 1, 1)
+			tmpSlice.Index(0).Set(fromValue)
+			return convertSliceToSlice(tmpSlice, toValue)
 		}
 	case reflect.Struct:
 		switch fromType.Kind() {
 		case reflect.Map:
 			convertMapToStruct(fromValue, toValue)
 		case reflect.Struct:
-			//convertStructToStruct(fromValue, toValue)
+			convertStructToStruct(fromValue, toValue)
 		}
 	case reflect.Map:
 		switch fromType.Kind() {

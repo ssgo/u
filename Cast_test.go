@@ -1,6 +1,7 @@
 package u_test
 
 import (
+	"fmt"
 	"github.com/ssgo/u"
 	"reflect"
 	"testing"
@@ -219,12 +220,48 @@ func TestConvertStructToMap(t *testing.T) {
 
 	to := make([]map[string]interface{}, 0)
 
-	r := u.Convert(from, to)
-	if v, ok := r.([]map[string]interface{}); ok {
-		if len(v) < 2 || v[0]["Name"] != "Andy" || v[1]["Name"] != "Kitty" || v[1]["Age"] != 22 {
-			t.Error("test convert Struct to Map 2", v)
-		}
-	} else {
-		t.Error("test convert Struct to Map 1", r)
+	u.Convert(from, &to)
+	if len(to) < 2 || to[0]["Name"] != "Andy" || to[1]["Name"] != "Kitty" || to[1]["Age"] != 22 {
+		t.Error("test convert Struct to Map 2", to)
+	}
+}
+
+func TestConvertSliceToSlice(t *testing.T) {
+	from := []int{1, 2, 3}
+	to := make([]string, 0)
+
+	xto := &to
+	u.Convert(from, &xto)
+	if len(to) < 3 || to[0] != "1" || to[1] != "2" || to[2] != "3" {
+		t.Error("test convert Slice to Slice 1", to)
+	}
+
+	from2 := 9
+	to2 := make([]string, 0)
+
+	u.Convert(from2, &to2)
+	if len(to2) < 1 || to2[0] != "9" {
+		t.Error("test convert Slice to Slice 2", to2)
+	}
+}
+
+func TestConvertStructToStruct(t *testing.T) {
+	type User1 struct {
+		Name string
+		Age  int
+	}
+	type User2 struct {
+		NAME  string
+		Level int
+		Class int
+	}
+
+	from := User1{Name: "Tom", Age: 23}
+	to := User2{NAME: "Jeff", Level: -1}
+
+	u.Convert(from, &to)
+	fmt.Println(to)
+	if to.NAME != "Tom" {
+		t.Error("test convert Struct to Struct", to)
 	}
 }
