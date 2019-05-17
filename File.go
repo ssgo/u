@@ -80,8 +80,6 @@ func CheckPath(fileName string) {
 var fileLocks = map[string]*sync.Mutex{}
 
 func Load(fileName string, to interface{}) error {
-	CheckPath(fileName)
-
 	if fileLocks[fileName] == nil {
 		fileLocks[fileName] = new(sync.Mutex)
 	}
