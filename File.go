@@ -2,6 +2,7 @@ package u
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -161,7 +162,15 @@ func save(fileName string, isYaml bool, data interface{}) error {
 		if isYaml {
 			buf, err = yaml.Marshal(data)
 		} else {
-			buf, err = json.MarshalIndent(data, "", "  ")
+			buf, err = json.Marshal(data)
+			if err == nil {
+				FixUpperCase(buf, nil)
+				buf2 := bytes.Buffer{}
+				err2 := json.Indent(&buf2, buf, "", "  ")
+				if err2 == nil {
+					buf = buf2.Bytes()
+				}
+			}
 		}
 		if err == nil {
 			_, err = fp.Write(buf)
