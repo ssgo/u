@@ -24,7 +24,10 @@ func RunCommand(command string, args ...string) ([]string, error) {
 	}
 
 	outs := make([]string, 0)
-	cmd.Start()
+	err = cmd.Start()
+	if err != nil {
+		return nil, err
+	}
 	reader := bufio.NewReader(io.MultiReader(stdout, stderr))
 	for {
 		lineBuf, _, err2 := reader.ReadLine()
@@ -36,11 +39,11 @@ func RunCommand(command string, args ...string) ([]string, error) {
 		outs = append(outs, line)
 	}
 
-	cmd.Wait()
+	_ = cmd.Wait()
 	return outs, nil
 }
 
-func ReadFile(fileName string) ([]string, error) {
+func ReadFileLines(fileName string) ([]string, error) {
 	outs := make([]string, 0)
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0400)
 	if err != nil {
@@ -60,7 +63,7 @@ func ReadFile(fileName string) ([]string, error) {
 	return outs, nil
 }
 
-func ReadFullFile(fileName string, maxLen uint) (string, error) {
+func ReadFile(fileName string, maxLen uint) (string, error) {
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0400)
 	if err != nil {
 		return "", err
@@ -74,6 +77,23 @@ func ReadFullFile(fileName string, maxLen uint) (string, error) {
 	}
 
 	return string(buf[0:n]), nil
+}
+
+func WriteFile(fileName string, content string) error {
+	CheckPath(fileName)
+
+	fd, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+
+	_, err = fd.Write([]byte(content))
+	_ = fd.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func FileExists(fileName string) bool {

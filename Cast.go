@@ -294,7 +294,7 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 		}
 		if data[i] == '"' {
 			keyPos := -1
-			if data[i-1] == '{' || (data[i-1] == ',' && tpos >= 0 && types[tpos]) {
+			if i > 0 && (data[i-1] == '{' || (data[i-1] == ',' && tpos >= 0 && types[tpos])) {
 				keyPos = i + 1
 			}
 			// skip string
