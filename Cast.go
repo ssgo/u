@@ -327,13 +327,37 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 							break
 						}
 					}
-					//fmt.Println("  ** >>", keys, excluded)
 					if !excluded {
-						data[keyPos] += 32
+						keyStr := keys[tpos]
+						hasLower := false
+						for c := len(keyStr) - 1; c >= 0; c-- {
+							if keyStr[c] >= 'a' && keyStr[c] <= 'z' {
+								hasLower = true
+								break
+							}
+						}
+						// 不转换全大写的Key
+						if hasLower {
+							data[keyPos] += 32
+						}
 					}
 				} else {
 					// 不进行排除判断
-					data[keyPos] += 32
+					hasLower := false
+					dataLen := len(data)
+					for c := keyPos; c < dataLen; c++ {
+						if data[c] == '"' {
+							break
+						}
+						if data[c] >= 'a' && data[c] <= 'z' {
+							hasLower = true
+							break
+						}
+					}
+					// 不转换全大写的Key
+					if hasLower {
+						data[keyPos] += 32
+					}
 				}
 			}
 			continue
