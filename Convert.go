@@ -117,8 +117,12 @@ func convertMapToMap(from, to reflect.Value) {
 		keyItem := reflect.New(toType.Key()).Elem()
 		valueItem := reflect.New(toType.Elem()).Elem()
 		convert(k, keyItem)
-		convert(v, valueItem)
-		to.SetMapIndex(keyItem, valueItem)
+		newItem := convert(v, valueItem)
+		if newItem != nil {
+			to.SetMapIndex(keyItem, *newItem)
+		} else {
+			to.SetMapIndex(keyItem, valueItem)
+		}
 	}
 }
 
@@ -130,8 +134,12 @@ func convertStructToMap(from, to reflect.Value) {
 		keyItem := reflect.New(toType.Key()).Elem()
 		valueItem := reflect.New(toType.Elem()).Elem()
 		convert(k, keyItem)
-		convert(v, valueItem)
-		to.SetMapIndex(keyItem, valueItem)
+		newItem := convert(v, valueItem)
+		if newItem != nil {
+			to.SetMapIndex(keyItem, *newItem)
+		} else {
+			to.SetMapIndex(keyItem, valueItem)
+		}
 	}
 }
 
@@ -140,8 +148,12 @@ func convertSliceToSlice(from, to reflect.Value) *reflect.Value {
 	fromNum := from.Len()
 	for i := 0; i < fromNum; i++ {
 		valueItem := reflect.New(toType.Elem()).Elem()
-		convert(from.Index(i), valueItem)
-		to = reflect.Append(to, valueItem)
+		newItem := convert(from.Index(i), valueItem)
+		if newItem != nil {
+			to = reflect.Append(to, *newItem)
+		} else {
+			to = reflect.Append(to, valueItem)
+		}
 	}
 	return &to
 }
@@ -201,10 +213,10 @@ func convert(from, to interface{}) *reflect.Value {
 	case reflect.Float32, reflect.Float64:
 		toValue.SetFloat(Float64(from))
 	case reflect.Slice:
-		if fromType.Kind() == reflect.Slice {
-			return convertSliceToSlice(fromValue, toValue)
-		} else if toType.Kind() == reflect.Slice && toType.Elem().Kind() == reflect.Uint8 {
+		if toType.Kind() == reflect.Slice && toType.Elem().Kind() == reflect.Uint8 {
 			toValue.SetBytes(Bytes(from))
+		} else if fromType.Kind() == reflect.Slice {
+			return convertSliceToSlice(fromValue, toValue)
 		} else {
 			tmpSlice := reflect.MakeSlice(reflect.SliceOf(fromType), 1, 1)
 			tmpSlice.Index(0).Set(fromValue)

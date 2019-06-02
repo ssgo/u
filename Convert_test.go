@@ -1,6 +1,7 @@
 package u_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/ssgo/u"
 	"reflect"
@@ -236,4 +237,32 @@ func TestConvertStructToStruct(t *testing.T) {
 	if to.NAME != "Tom" {
 		t.Error("test convert Struct to Struct", to)
 	}
+}
+
+func TestConvertS(t *testing.T) {
+	s := `{
+  "Apps": null,
+  "Binds": {
+    "xxx": [
+      "aaa",
+      "bbb"
+    ]
+  },
+  "Desc": "",
+  "Name": "",
+  "Vars": null,
+  "name": "c1"
+}`
+	args := map[string]interface{}{}
+	_ = json.Unmarshal([]byte(s), &args)
+
+	in := struct {
+		Name  string
+		Desc  string
+		Vars  map[string]*string
+		Binds map[string][]string
+	}{}
+	u.Convert(args, &in)
+
+	fmt.Println(u.JsonP(in))
 }
