@@ -68,7 +68,7 @@ func convertMapToStruct(from, to reflect.Value) {
 			v = from.MapIndex(*k)
 		}
 
-		if v.IsValid() && !v.IsNil() {
+		if v.IsValid() {
 			r := convert(v, to.Field(i))
 			if r != nil {
 				to.Field(i).Set(*r)
