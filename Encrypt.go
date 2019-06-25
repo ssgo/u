@@ -4,7 +4,12 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -140,4 +145,60 @@ func makeKeyIv(key []byte, iv []byte) ([]byte, []byte) {
 		}
 	}
 	return key, iv
+}
+
+func MD5Base64(data string) string {
+	return base64.StdEncoding.EncodeToString(MD5([]byte(data)))
+}
+
+func MD5String(data string) string {
+	return hex.EncodeToString(MD5([]byte(data)))
+}
+
+func MD5(data []byte) []byte {
+	hash := md5.New()
+	hash.Write(data)
+	return hash.Sum([]byte{})
+}
+
+func Sha1Base64(data string) string {
+	return base64.StdEncoding.EncodeToString(Sha1([]byte(data)))
+}
+
+func Sha1String(data string) string {
+	return hex.EncodeToString(Sha1([]byte(data)))
+}
+
+func Sha1(data []byte) []byte {
+	hash := sha1.New()
+	hash.Write(data)
+	return hash.Sum([]byte{})
+}
+
+func Sha256Base64(data string) string {
+	return base64.StdEncoding.EncodeToString(Sha256([]byte(data)))
+}
+
+func Sha256String(data string) string {
+	return hex.EncodeToString(Sha256([]byte(data)))
+}
+
+func Sha256(data []byte) []byte {
+	hash := sha256.New()
+	hash.Write(data)
+	return hash.Sum([]byte{})
+}
+
+func Sha512Base64(data string) string {
+	return base64.StdEncoding.EncodeToString(Sha512([]byte(data)))
+}
+
+func Sha512String(data string) string {
+	return hex.EncodeToString(Sha512([]byte(data)))
+}
+
+func Sha512(data []byte) []byte {
+	hash := sha512.New()
+	hash.Write(data)
+	return hash.Sum([]byte{})
 }

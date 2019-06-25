@@ -18,6 +18,17 @@ func TestEncodeInt(t *testing.T) {
 	}
 }
 
+func TestEncodeSha(t *testing.T) {
+	fmt.Println(u.MD5String("Hello"))
+	fmt.Println(u.MD5Base64("Hello"))
+	fmt.Println(u.Sha1String("Hello"))
+	fmt.Println(u.Sha1Base64("Hello"))
+	fmt.Println(u.Sha256String("Hello"))
+	fmt.Println(u.Sha256Base64("Hello"))
+	fmt.Println(u.Sha512String("Hello"))
+	fmt.Println(u.Sha512Base64("Hello"))
+}
+
 func TestAes(t *testing.T) {
 
 	testString := "Hello Password!"
