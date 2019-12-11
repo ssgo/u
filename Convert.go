@@ -50,8 +50,13 @@ func FixNilValue(v reflect.Value) {
 func convertMapToStruct(from, to reflect.Value) {
 	keys := from.MapKeys()
 	keyMap := map[string]*reflect.Value{}
+	fixedKeyMap := map[string]*reflect.Value{}	// match with fixed '-' & '_'
 	for j := len(keys) - 1; j >= 0; j-- {
-		keyMap[strings.ToLower(ValueToString(keys[j]))] = &keys[j]
+		keyStr := ValueToString(keys[j])
+		keyMap[strings.ToLower(keyStr)] = &keys[j]
+		if strings.ContainsRune(keyStr, '-') || strings.ContainsRune(keyStr, '_') {
+			fixedKeyMap[strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(keyStr),"-", ""),"_", "")] = &keys[j]
+		}
 	}
 
 	toType := to.Type()
@@ -63,6 +68,9 @@ func convertMapToStruct(from, to reflect.Value) {
 		}
 
 		k := keyMap[strings.ToLower(f.Name)]
+		if k == nil {
+			k = fixedKeyMap[strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(f.Name),"-", ""),"_", "")]
+		}
 		var v reflect.Value
 		if k != nil {
 			v = from.MapIndex(*k)
@@ -79,9 +87,13 @@ func convertMapToStruct(from, to reflect.Value) {
 
 func convertStructToStruct(from, to reflect.Value) {
 	keyMap := map[string]int{}
+	fixedKeyMap := map[string]int{}
 	fromType := from.Type()
 	for i := fromType.NumField() - 1; i >= 0; i-- {
 		keyMap[strings.ToLower(fromType.Field(i).Name)] = i + 1
+		if strings.ContainsRune(fromType.Field(i).Name, '_') {
+			fixedKeyMap[strings.ReplaceAll(strings.ToLower(fromType.Field(i).Name),"_", "")] = i + 1
+		}
 	}
 
 	toType := to.Type()
@@ -93,6 +105,9 @@ func convertStructToStruct(from, to reflect.Value) {
 		}
 
 		k := keyMap[strings.ToLower(f.Name)]
+		if k == 0 {
+			k = fixedKeyMap[strings.ReplaceAll(strings.ToLower(f.Name),"_", "")]
+		}
 		var v reflect.Value
 		if k != 0 {
 			v = from.Field(k - 1)

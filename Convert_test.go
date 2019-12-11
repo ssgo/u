@@ -81,7 +81,7 @@ func TestConvertMapToStruct(t *testing.T) {
 		"bbb2": 222,
 		"bbb3": 222,
 		"ccc":  333.333,
-		"ccc2": []string{"1", "2", "3.0"},
+		"ccc-2": []string{"1", "2", "3.0"},
 		"ccc3": []int{1, 2, 3},
 		"ccc4": []interface{}{"1", 2, 3.0},
 		"ccc5": []map[string]interface{}{
@@ -97,7 +97,7 @@ func TestConvertMapToStruct(t *testing.T) {
 
 	type CCC struct {
 		Ccc  string
-		Ccc2 []int
+		Ccc2__ []int
 		Ccc3 []interface{}
 		Ccc4 []*float32
 		Ccc5 []*User
@@ -123,8 +123,8 @@ func TestConvertMapToStruct(t *testing.T) {
 		t.Error("test convert Map to Struct 2", to)
 	}
 
-	if len(to.Ccc2) < 3 || to.Ccc2[0] != 1 || to.Ccc2[1] != 2 || to.Ccc2[2] != 3 {
-		t.Error("test convert Slice to Slice 1", to.Ccc2)
+	if len(to.Ccc2__) < 3 || to.Ccc2__[0] != 1 || to.Ccc2__[1] != 2 || to.Ccc2__[2] != 3 {
+		t.Error("test convert Slice to Slice 1", to.Ccc2__)
 	}
 
 	if len(to.Ccc3) < 3 || to.Ccc3[0] != 1 || to.Ccc3[1] != 2 || to.Ccc3[2] != 3 {
@@ -220,21 +220,21 @@ func TestConvertSliceToSlice(t *testing.T) {
 
 func TestConvertStructToStruct(t *testing.T) {
 	type User1 struct {
-		Name string
+		My_Name string
 		Age  int
 	}
 	type User2 struct {
-		NAME  string
+		MYNAME_  string
 		Level int
 		Class int
 	}
 
-	from := User1{Name: "Tom", Age: 23}
-	to := User2{NAME: "Jeff", Level: -1}
+	from := User1{My_Name: "Tom", Age: 23}
+	to := User2{MYNAME_: "Jeff", Level: -1}
 
 	u.Convert(from, &to)
 	fmt.Println(to)
-	if to.NAME != "Tom" {
+	if to.MYNAME_ != "Tom" {
 		t.Error("test convert Struct to Struct", to)
 	}
 }
