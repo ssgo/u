@@ -61,12 +61,13 @@ func convertMapToStruct(from, to reflect.Value) {
 
 	toType := to.Type()
 	for i := toType.NumField() - 1; i >= 0; i-- {
-		if toType.Field(i).Name[0] > 90 {
-			continue
-		}
 		f := toType.Field(i)
 		if f.Anonymous {
 			convertMapToStruct(from, to.Field(i))
+			continue
+		}
+
+		if toType.Field(i).Name[0] > 90 {
 			continue
 		}
 
@@ -105,11 +106,12 @@ func convertStructToStruct(from, to reflect.Value) {
 	toType := to.Type()
 	for i := toType.NumField() - 1; i >= 0; i-- {
 		f := toType.Field(i)
-		if f.Name[0] > 90 {
-			continue
-		}
 		if f.Anonymous {
 			convertStructToStruct(from, to.Field(i))
+			continue
+		}
+
+		if f.Name[0] > 90 {
 			continue
 		}
 
