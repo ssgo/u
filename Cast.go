@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func ParseInt(s string) int64 {
@@ -236,6 +237,15 @@ func Strings(value interface{}) []string {
 		return []string{String(value)}
 	}
 	return make([]string, 0)
+}
+
+func Duration(value string) time.Duration {
+	result, err := time.ParseDuration(value)
+	if err != nil {
+		return time.Duration(Int64(value)) * time.Millisecond
+	} else {
+		return result
+	}
 }
 
 func ValueToString(v reflect.Value) string {

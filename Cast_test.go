@@ -3,6 +3,7 @@ package u_test
 import (
 	"github.com/ssgo/u"
 	"testing"
+	"time"
 )
 
 func TestFixUpperCase1(t *testing.T) {
@@ -30,5 +31,24 @@ func TestFixUpperCase2(t *testing.T) {
 	rights := "{\"FLAG\":\"321\",\"app\":\"\",\"info\":\"stopping router\",\"logTime\":1557057463.721667,\"logType\":\"server\",\"node\":\"10.59.5.226:18811\",\"proto\":\"http\",\"startTime\":1557057463.6995,\"traceId\":\"g6aXzbekTGZ\",\"weight\":1}"
 	if string(buf) != rights {
 		t.Error("FixUpperCase2 failed")
+	}
+}
+
+func TestDuration(t *testing.T) {
+	sets := map[string]time.Duration{
+		"100m":   100 * time.Minute,
+		"100s":   100 * time.Second,
+		"100ms":  100 * time.Millisecond,
+		"100":    100 * time.Millisecond,
+		"100us":  100 * time.Microsecond,
+		"100ns":  100 * time.Nanosecond,
+		"100xxx": 0,
+		"hdasds": 0,
+	}
+
+	for set, check := range sets {
+		if u.Duration(set) != check {
+			t.Error("time", set, "is", int64(u.Duration(set)), "!=", int64(check))
+		}
 	}
 }
