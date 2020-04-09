@@ -73,17 +73,18 @@ func TestConvertMapToStruct(t *testing.T) {
 	type User struct {
 		Name string
 		Age  int
+		sex  string
 	}
 
 	from := map[string]interface{}{
-		"aaa":  "111",
-		"bbb":  222,
-		"bbb2": 222,
-		"bbb3": 222,
-		"ccc":  333.333,
+		"aaa":   "111",
+		"bbb":   222,
+		"bbb2":  222,
+		"bbb3":  222,
+		"ccc":   333.333,
 		"ccc-2": []string{"1", "2", "3.0"},
-		"ccc3": []int{1, 2, 3},
-		"ccc4": []interface{}{"1", 2, 3.0},
+		"ccc3":  []int{1, 2, 3},
+		"ccc4":  []interface{}{"1", 2, 3.0},
 		"ccc5": []map[string]interface{}{
 			{
 				"name": 13,
@@ -93,24 +94,28 @@ func TestConvertMapToStruct(t *testing.T) {
 				"age":  22,
 			},
 		},
+		"sex": "male",
 	}
 
 	type CCC struct {
-		Ccc  string
+		Ccc    string
 		Ccc2__ []int
-		Ccc3 []interface{}
-		Ccc4 []*float32
-		Ccc5 []*User
+		Ccc3   []interface{}
+		Ccc4   []*float32
+		Ccc5   []*User
+		sex    string
 	}
 	type BBB struct {
 		Bbb  *string
 		BBB2 []byte
 		Bbb3 ****string
 		CCC
+		sex string
 	}
 	to := struct {
 		Aaa int
 		BBB
+		sex string
 	}{}
 
 	u.Convert(from, &to)
@@ -221,12 +226,12 @@ func TestConvertSliceToSlice(t *testing.T) {
 func TestConvertStructToStruct(t *testing.T) {
 	type User1 struct {
 		My_Name string
-		Age  int
+		Age     int
 	}
 	type User2 struct {
-		MYNAME_  string
-		Level int
-		Class int
+		MYNAME_ string
+		Level   int
+		Class   int
 	}
 
 	from := User1{My_Name: "Tom", Age: 23}
