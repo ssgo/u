@@ -100,7 +100,7 @@ func EncryptAes(origData string, key []byte, iv []byte) (out string) {
 	blockMode := cipher.NewCBCEncrypter(block, iv[:blockSize])
 	crypted := make([]byte, len(origDataBytes))
 	blockMode.CryptBlocks(crypted, origDataBytes)
-	return base64.StdEncoding.EncodeToString(crypted)
+	return base64.URLEncoding.EncodeToString(crypted)
 }
 
 func DecryptAes(crypted string, key []byte, iv []byte) (out string) {
@@ -111,7 +111,13 @@ func DecryptAes(crypted string, key []byte, iv []byte) (out string) {
 	}()
 
 	key, iv = makeKeyIv(key, iv)
-	cryptedBytes, err := base64.StdEncoding.DecodeString(crypted)
+	var base64Encoding *base64.Encoding
+	if strings.ContainsRune(crypted, '_') || strings.ContainsRune(crypted, '-') {
+		base64Encoding = base64.URLEncoding
+	} else {
+		base64Encoding = base64.StdEncoding
+	}
+	cryptedBytes, err := base64Encoding.DecodeString(crypted)
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		fmt.Println(err)
