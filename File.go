@@ -102,7 +102,7 @@ func FileExists(fileName string) bool {
 }
 
 func CheckPath(fileName string) {
-	pos := strings.LastIndexByte(fileName, '/')
+	pos := strings.LastIndexByte(fileName, os.PathSeparator)
 	if pos < 0 {
 		return
 	}
@@ -110,6 +110,14 @@ func CheckPath(fileName string) {
 	if _, err := os.Stat(path); err != nil {
 		_ = os.MkdirAll(path, 0700)
 	}
+}
+
+func FixPath(path string) string {
+	const spe = string(os.PathSeparator)
+	if !strings.HasSuffix(path, spe) {
+		return path + spe
+	}
+	return path
 }
 
 var fileLocks = map[string]*sync.Mutex{}
