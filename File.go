@@ -168,14 +168,18 @@ func Save(fileName string, data interface{}) error {
 }
 
 func SaveYaml(fileName string, data interface{}) error {
-	return save(fileName, true, data)
+	return save(fileName, true, data, true)
 }
 
 func SaveJson(fileName string, data interface{}) error {
-	return save(fileName, false, data)
+	return save(fileName, false, data, false)
 }
 
-func save(fileName string, isYaml bool, data interface{}) error {
+func SaveJsonP(fileName string, data interface{}) error {
+	return save(fileName, false, data, true)
+}
+
+func save(fileName string, isYaml bool, data interface{}, indent bool) error {
 	CheckPath(fileName)
 
 	if fileLocks[fileName] == nil {
@@ -193,10 +197,12 @@ func save(fileName string, isYaml bool, data interface{}) error {
 			buf, err = json.Marshal(data)
 			if err == nil {
 				FixUpperCase(buf, nil)
-				buf2 := bytes.Buffer{}
-				err2 := json.Indent(&buf2, buf, "", "  ")
-				if err2 == nil {
-					buf = buf2.Bytes()
+				if indent {
+					buf2 := bytes.Buffer{}
+					err2 := json.Indent(&buf2, buf, "", "  ")
+					if err2 == nil {
+						buf = buf2.Bytes()
+					}
 				}
 			}
 		}
