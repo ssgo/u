@@ -161,9 +161,9 @@ func load(fileName string, isYaml bool, to interface{}) error {
 
 func Save(fileName string, data interface{}) error {
 	if strings.HasSuffix(fileName, "yml") || strings.HasSuffix(fileName, "yaml") {
-		return save(fileName, true, data)
+		return save(fileName, true, data, true)
 	} else {
-		return save(fileName, false, data)
+		return save(fileName, false, data, false)
 	}
 }
 
