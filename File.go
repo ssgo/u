@@ -194,16 +194,25 @@ func save(fileName string, isYaml bool, data interface{}, indent bool) error {
 		if isYaml {
 			buf, err = yaml.Marshal(data)
 		} else {
-			buf, err = json.Marshal(data)
+			buffer := bytes.Buffer{}
+			enc := json.NewEncoder(&buffer)
+			enc.SetEscapeHTML(false)
+			if indent {
+				enc.SetIndent("", "  ")
+			}
+			err := enc.Encode(data)
+
+			//buf, err = json.Marshal(data)
 			if err == nil {
+				buf = buffer.Bytes()
 				FixUpperCase(buf, nil)
-				if indent {
-					buf2 := bytes.Buffer{}
-					err2 := json.Indent(&buf2, buf, "", "  ")
-					if err2 == nil {
-						buf = buf2.Bytes()
-					}
-				}
+				//if indent {
+				//	buf2 := bytes.Buffer{}
+				//	err2 := json.Indent(&buf2, buf, "", "  ")
+				//	if err2 == nil {
+				//		buf = buf2.Bytes()
+				//	}
+				//}
 			}
 		}
 		if err == nil {
