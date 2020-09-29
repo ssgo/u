@@ -6,6 +6,16 @@ import (
 	"testing"
 )
 
+//func TestId(t *testing.T) {
+//	for _, nx := range []string{"99u", "UUU", "999u", "UUUU", "9999u", "UUUUU", "99999u", "UUUUUU"} {
+//		fmt.Println(nx, u.DecodeInt([]byte(nx)))
+//	}
+//	for i:=0; i<10; i++ {
+//		dd := u.ShortUniqueId()
+//		fmt.Println(dd, len(dd))
+//	}
+//}
+
 func TestUniqueId(t *testing.T) {
 	fmt.Println(u.UniqueId())
 	uids := map[string]bool{}
