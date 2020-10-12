@@ -163,6 +163,15 @@ func convertStructToMap(from, to reflect.Value) {
 		keyItem := reflect.New(toType.Key()).Elem()
 		valueItem := reflect.New(toType.Elem()).Elem()
 		convert(k, keyItem)
+		if keyItem.Kind() == reflect.String {
+			// Struct转Map时自动将首字母改为小写
+			keyStr := keyItem.String()
+			if len(keyStr) > 0 && keyStr[0] >= 'A' && keyStr[0] <= 'Z' {
+				keyBuf := []byte(keyStr)
+				keyBuf[0] += 32
+				keyItem = reflect.ValueOf(string(keyBuf))
+			}
+		}
 		newItem := convert(v, valueItem)
 		if newItem != nil {
 			to.SetMapIndex(keyItem, *newItem)
