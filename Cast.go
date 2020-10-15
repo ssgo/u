@@ -422,6 +422,29 @@ func SplitTrim(s, sep string) []string {
 	return ss
 }
 
+func AppendUniqueString(to []string, from string) []string {
+	found := false
+	for _, str := range to {
+		if str == from {
+			found = true
+			break
+		}
+	}
+	if !found {
+		to = append(to, from)
+	}
+	return to
+}
+
+func AppendUniqueStrings(to []string, from []string) []string {
+	if from != nil {
+		for _, fromStr := range from {
+			to = AppendUniqueString(to, fromStr)
+		}
+	}
+	return to
+}
+
 func Json(value interface{}) string {
 	j, err := json.Marshal(value)
 	if err == nil {
