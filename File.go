@@ -120,6 +120,7 @@ func FixPath(path string) string {
 	return path
 }
 
+var fileLocksLock = sync.Mutex{}
 var fileLocks = map[string]*sync.Mutex{}
 
 func Load(fileName string, to interface{}) error {
@@ -139,11 +140,15 @@ func LoadJson(fileName string, to interface{}) error {
 }
 
 func load(fileName string, isYaml bool, to interface{}) error {
+	fileLocksLock.Lock()
 	if fileLocks[fileName] == nil {
 		fileLocks[fileName] = new(sync.Mutex)
 	}
-	fileLocks[fileName].Lock()
-	defer fileLocks[fileName].Unlock()
+	lock := fileLocks[fileName]
+	fileLocksLock.Unlock()
+
+	lock.Lock()
+	defer lock.Unlock()
 
 	fp, err := os.Open(fileName)
 	if err == nil {
@@ -182,11 +187,15 @@ func SaveJsonP(fileName string, data interface{}) error {
 func save(fileName string, isYaml bool, data interface{}, indent bool) error {
 	CheckPath(fileName)
 
+	fileLocksLock.Lock()
 	if fileLocks[fileName] == nil {
 		fileLocks[fileName] = new(sync.Mutex)
 	}
-	fileLocks[fileName].Lock()
-	defer fileLocks[fileName].Unlock()
+	lock := fileLocks[fileName]
+	fileLocksLock.Unlock()
+
+	lock.Lock()
+	defer lock.Unlock()
 
 	fp, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err == nil {
