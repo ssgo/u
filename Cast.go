@@ -41,6 +41,9 @@ func Int(value interface{}) int {
 	return int(Int64(value))
 }
 func Int64(value interface{}) int64 {
+	if value == nil {
+		return 0
+	}
 	switch realValue := value.(type) {
 	case int:
 		return int64(realValue)
@@ -51,7 +54,7 @@ func Int64(value interface{}) int64 {
 	case int32:
 		return int64(realValue)
 	case int64:
-		return int64(realValue)
+		return realValue
 	case float32:
 		return int64(realValue)
 	case float64:
@@ -74,6 +77,9 @@ func Uint(value interface{}) uint {
 	return uint(Uint64(value))
 }
 func Uint64(value interface{}) uint64 {
+	if value == nil {
+		return 0
+	}
 	switch realValue := value.(type) {
 	case uint:
 		return uint64(realValue)
@@ -84,7 +90,7 @@ func Uint64(value interface{}) uint64 {
 	case uint32:
 		return uint64(realValue)
 	case uint64:
-		return uint64(realValue)
+		return realValue
 	case float32:
 		return uint64(realValue)
 	case float64:
@@ -107,6 +113,9 @@ func Float(value interface{}) float32 {
 	return float32(Float64(value))
 }
 func Float64(value interface{}) float64 {
+	if value == nil {
+		return 0
+	}
 	switch realValue := value.(type) {
 	case int:
 		return float64(realValue)
@@ -121,7 +130,7 @@ func Float64(value interface{}) float64 {
 	case float32:
 		return float64(realValue)
 	case float64:
-		return float64(realValue)
+		return realValue
 	case bool:
 		if realValue {
 			return 1
@@ -146,6 +155,9 @@ func Bytes(value interface{}) []byte {
 	return []byte(String(value))
 }
 func String(value interface{}) string {
+	if value == nil {
+		return ""
+	}
 	switch realValue := value.(type) {
 	case int:
 		return strconv.FormatInt(int64(realValue), 10)
@@ -169,10 +181,8 @@ func String(value interface{}) string {
 		return string(realValue)
 	}
 	t := reflect.TypeOf(value)
-	if t != nil {
-		if t.Kind() == reflect.Struct || t.Kind() == reflect.Map || t.Kind() == reflect.Slice {
-			return Json(value)
-		}
+	if t != nil && (t.Kind() == reflect.Struct || t.Kind() == reflect.Map || t.Kind() == reflect.Slice) {
+		return Json(value)
 	}
 	return fmt.Sprint(value)
 }
