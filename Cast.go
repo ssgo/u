@@ -55,6 +55,16 @@ func Int64(value interface{}) int64 {
 		return int64(realValue)
 	case int64:
 		return realValue
+	case uint:
+		return int64(realValue)
+	case uint8:
+		return int64(realValue)
+	case uint16:
+		return int64(realValue)
+	case uint32:
+		return int64(realValue)
+	case uint64:
+		return int64(realValue)
 	case float32:
 		return int64(realValue)
 	case float64:
@@ -81,6 +91,16 @@ func Uint64(value interface{}) uint64 {
 		return 0
 	}
 	switch realValue := value.(type) {
+	case int:
+		return uint64(realValue)
+	case int8:
+		return uint64(realValue)
+	case int16:
+		return uint64(realValue)
+	case int32:
+		return uint64(realValue)
+	case int64:
+		return uint64(realValue)
 	case uint:
 		return uint64(realValue)
 	case uint8:
@@ -127,6 +147,16 @@ func Float64(value interface{}) float64 {
 		return float64(realValue)
 	case int64:
 		return float64(realValue)
+	case uint:
+		return float64(realValue)
+	case uint8:
+		return float64(realValue)
+	case uint16:
+		return float64(realValue)
+	case uint32:
+		return float64(realValue)
+	case uint64:
+		return float64(realValue)
 	case float32:
 		return float64(realValue)
 	case float64:
@@ -169,6 +199,20 @@ func String(value interface{}) string {
 		return strconv.FormatInt(int64(realValue), 10)
 	case int64:
 		return strconv.FormatInt(realValue, 10)
+	case uint:
+		return strconv.FormatInt(int64(realValue), 10)
+	case uint8:
+		return strconv.FormatInt(int64(realValue), 10)
+	case uint16:
+		return strconv.FormatInt(int64(realValue), 10)
+	case uint32:
+		return strconv.FormatInt(int64(realValue), 10)
+	case uint64:
+		return strconv.FormatInt(int64(realValue), 10)
+	case float32:
+		return strconv.FormatFloat(float64(realValue), 'f', 2, 32)
+	case float64:
+		return strconv.FormatFloat(realValue, 'f', 4, 64)
 	case bool:
 		if realValue {
 			return "true"
