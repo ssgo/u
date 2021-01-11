@@ -90,6 +90,9 @@ func EncryptAes(origData string, key []byte, iv []byte) (out string) {
 	}()
 
 	key, iv = makeKeyIv(key, iv)
+	if iv == nil {
+		iv = key
+	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return ""
@@ -111,6 +114,9 @@ func DecryptAes(crypted string, key []byte, iv []byte) (out string) {
 	}()
 
 	key, iv = makeKeyIv(key, iv)
+	if iv == nil {
+		iv = key
+	}
 	var base64Encoding *base64.Encoding
 	if strings.ContainsRune(crypted, '_') || strings.ContainsRune(crypted, '-') {
 		base64Encoding = base64.URLEncoding
@@ -160,9 +166,11 @@ func makeKeyIv(key []byte, iv []byte) ([]byte, []byte) {
 			key = append(key, 0)
 		}
 	}
-	if len(iv) < len(key) {
-		for i := len(iv); i < len(key); i++ {
-			iv = append(iv, 0)
+	if iv != nil {
+		if len(iv) < len(key) {
+			for i := len(iv); i < len(key); i++ {
+				iv = append(iv, 0)
+			}
 		}
 	}
 	return key, iv
