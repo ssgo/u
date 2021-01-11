@@ -83,6 +83,10 @@ func DecodeInt(buf []byte) uint64 {
 }
 
 func EncryptAes(origData string, key []byte, iv []byte) (out string) {
+	return EncryptAesBytes([]byte(origData), key, iv)
+}
+
+func EncryptAesBytes(origData []byte, key []byte, iv []byte) (out string) {
 	defer func() {
 		if r := recover(); r != nil {
 			out = ""
@@ -97,7 +101,7 @@ func EncryptAes(origData string, key []byte, iv []byte) (out string) {
 	if err != nil {
 		return ""
 	}
-	origDataBytes := []byte(origData)
+	origDataBytes := origData
 	blockSize := block.BlockSize()
 	origDataBytes = pkcs5Padding(origDataBytes, blockSize)
 	blockMode := cipher.NewCBCEncrypter(block, iv[:blockSize])
@@ -107,9 +111,13 @@ func EncryptAes(origData string, key []byte, iv []byte) (out string) {
 }
 
 func DecryptAes(crypted string, key []byte, iv []byte) (out string) {
+	return String(DecryptAesBytes(crypted, key, iv))
+}
+
+func DecryptAesBytes(crypted string, key []byte, iv []byte) (out []byte) {
 	defer func() {
 		if r := recover(); r != nil {
-			out = ""
+			out = nil
 		}
 	}()
 
@@ -127,14 +135,14 @@ func DecryptAes(crypted string, key []byte, iv []byte) (out string) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		fmt.Println(err)
-		return ""
+		return nil
 	}
 	blockSize := block.BlockSize()
 	blockMode := cipher.NewCBCDecrypter(block, iv[:blockSize])
 	origData := make([]byte, len(cryptedBytes))
 	blockMode.CryptBlocks(origData, cryptedBytes)
 	origData = pkcs5UnPadding(origData)
-	return string(origData)
+	return origData
 }
 
 func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
