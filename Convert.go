@@ -279,3 +279,16 @@ func convert(from, to interface{}) *reflect.Value {
 	}
 	return nil
 }
+
+func ToInterfaceArray(in interface{}) []interface{} {
+	v := FinalValue(reflect.ValueOf(in))
+	out := make([]interface{}, 0)
+	if v.Kind() == reflect.Slice {
+		for i := 0; i < v.Len(); i++ {
+			if v.Index(i).CanInterface() {
+				out = append(out, v.Index(i).Interface())
+			}
+		}
+	}
+	return out
+}

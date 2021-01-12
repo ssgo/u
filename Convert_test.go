@@ -243,6 +243,12 @@ func TestConvertStructToStruct(t *testing.T) {
 	}
 }
 
+//func TestToInterfaceArray(t *testing.T) {
+//	in := []int{1,2,3}
+//	out := u.ToInterfaceArray(in)
+//	fmt.Println(u.JsonP(out))
+//}
+
 //func TestConvertS(t *testing.T) {
 //	s := `{
 //  "Apps": null,
