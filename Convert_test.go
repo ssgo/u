@@ -1,7 +1,6 @@
 package u_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/ssgo/u"
 	"reflect"
@@ -199,8 +198,8 @@ func TestConvertStructToMap(t *testing.T) {
 	to := make([]map[string]interface{}, 0)
 
 	u.Convert(from, &to)
-	if len(to) < 2 || to[0]["Name"] != "Andy" || to[1]["Name"] != "Kitty" || to[1]["Age"] != 22 {
-		t.Error("test convert Struct to Map 2", to)
+	if len(to) < 2 || to[0]["name"] != "Andy" || to[1]["name"] != "Kitty" || to[1]["age"] != 22 {
+		t.Error("test convert Struct to Map 2", u.JsonP(to), len(to) < 2, to[0]["name"] != "Andy", to[1]["name"] != "Kitty", to[1]["age"] != 22)
 	}
 }
 
@@ -244,30 +243,50 @@ func TestConvertStructToStruct(t *testing.T) {
 	}
 }
 
-func TestConvertS(t *testing.T) {
-	s := `{
-  "Apps": null,
-  "Binds": {
-    "xxx": [
-      "aaa",
-      "bbb"
-    ]
-  },
-  "Desc": "",
-  "Name": "",
-  "Vars": null,
-  "name": "c1"
-}`
-	args := map[string]interface{}{}
-	_ = json.Unmarshal([]byte(s), &args)
+//func TestConvertS(t *testing.T) {
+//	s := `{
+//  "Apps": null,
+//  "Binds": {
+//    "xxx": [
+//      "aaa",
+//      "bbb"
+//    ]
+//  },
+//  "Desc": "",
+//  "Name": "",
+//  "Vars": null,
+//  "name": "c1"
+//}`
+//	args := map[string]interface{}{}
+//	_ = json.Unmarshal([]byte(s), &args)
+//
+//	in := struct {
+//		Name  string
+//		Desc  string
+//		Vars  map[string]*string
+//		Binds map[string][]string
+//	}{}
+//	u.Convert(args, &in)
+//
+//	fmt.Println(u.JsonP(in))
+//}
 
-	in := struct {
-		Name  string
-		Desc  string
-		Vars  map[string]*string
-		Binds map[string][]string
-	}{}
-	u.Convert(args, &in)
-
-	fmt.Println(u.JsonP(in))
-}
+//func TestConvertIntArray(t *testing.T) {
+//	s := `{
+//      "department": [2,3,7],
+//      "name": "AAA",
+//      "userid": "aaa"
+//    }`
+//
+//	args := map[string]interface{}{}
+//	_ = json.Unmarshal([]byte(s), &args)
+//	fmt.Println(u.JsonP(args))
+//
+//	in := struct {
+//		Department  []string
+//		Name  string
+//	}{}
+//	u.Convert(args, &in)
+//
+//	fmt.Println(u.JsonP(in))
+//}

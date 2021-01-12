@@ -210,9 +210,9 @@ func String(value interface{}) string {
 	case uint64:
 		return strconv.FormatInt(int64(realValue), 10)
 	case float32:
-		return strconv.FormatFloat(float64(realValue), 'f', 2, 32)
+		return strconv.FormatFloat(float64(realValue), 'f', -1, 32)
 	case float64:
-		return strconv.FormatFloat(realValue, 'f', 4, 64)
+		return strconv.FormatFloat(realValue, 'f', -1, 64)
 	case bool:
 		if realValue {
 			return "true"
