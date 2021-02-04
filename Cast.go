@@ -476,6 +476,14 @@ func SplitTrim(s, sep string) []string {
 	return ss
 }
 
+func SplitWithoutNone(s, sep string) []string {
+	if s == "" {
+		return []string{}
+	} else {
+		return SplitTrim(s, sep)
+	}
+}
+
 func AppendUniqueString(to []string, from string) []string {
 	found := false
 	for _, str := range to {

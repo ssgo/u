@@ -36,6 +36,17 @@ func (enc *intEncoder) AppendInt(buf []byte, u uint64) []byte {
 	return buf
 }
 
+func (enc *intEncoder) FillInt(buf []byte, length int) []byte {
+	for i := len(buf); i < length; i++ {
+		buf = enc.AppendInt(buf, uint64(GlobalRand1.Intn(62)))
+	}
+
+	if len(buf) > length {
+		buf = buf[0:length]
+	}
+	return buf
+}
+
 func (enc *intEncoder) DecodeInt(buf []byte) uint64 {
 	if buf == nil {
 		return 0
@@ -76,6 +87,10 @@ func EncodeInt(u uint64) []byte {
 
 func AppendInt(buf []byte, u uint64) []byte {
 	return defaultIntEncoder.AppendInt(buf, u)
+}
+
+func FillInt(buf []byte, length int) []byte {
+	return defaultIntEncoder.FillInt(buf, length)
 }
 
 func DecodeInt(buf []byte) uint64 {

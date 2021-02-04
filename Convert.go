@@ -10,7 +10,11 @@ func FinalType(v reflect.Value) reflect.Type {
 		v = v.Elem()
 	}
 	if v.Kind() == reflect.Interface {
-		return reflect.TypeOf(v.Interface())
+		t := reflect.TypeOf(v.Interface())
+		for t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+		return t
 	} else {
 		return v.Type()
 	}
@@ -26,7 +30,7 @@ func RealValue(v reflect.Value) reflect.Value {
 func FinalValue(v reflect.Value) reflect.Value {
 	v = RealValue(v)
 	if v.Kind() == reflect.Interface {
-		return v.Elem()
+		return RealValue(v.Elem())
 	} else {
 		return v
 	}
@@ -239,20 +243,20 @@ func convert(from, to interface{}) *reflect.Value {
 
 	switch toType.Kind() {
 	case reflect.Bool:
-		toValue.SetBool(Bool(from))
+		toValue.SetBool(Bool(fromValue.Interface()))
 	case reflect.Interface:
-		toValue.Set(reflect.ValueOf(from))
+		toValue.Set(reflect.ValueOf(fromValue.Interface()))
 	case reflect.String:
-		toValue.SetString(String(from))
+		toValue.SetString(String(fromValue.Interface()))
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		toValue.SetInt(Int64(from))
+		toValue.SetInt(Int64(fromValue.Interface()))
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		toValue.SetUint(Uint64(from))
+		toValue.SetUint(Uint64(fromValue.Interface()))
 	case reflect.Float32, reflect.Float64:
-		toValue.SetFloat(Float64(from))
+		toValue.SetFloat(Float64(fromValue.Interface()))
 	case reflect.Slice:
 		if toType.Kind() == reflect.Slice && toType.Elem().Kind() == reflect.Uint8 {
-			toValue.SetBytes(Bytes(from))
+			toValue.SetBytes(Bytes(fromValue.Interface()))
 		} else if fromType.Kind() == reflect.Slice {
 			return convertSliceToSlice(fromValue, toValue)
 		} else {
@@ -291,4 +295,26 @@ func ToInterfaceArray(in interface{}) []interface{} {
 		}
 	}
 	return out
+}
+
+func SetValue(to, from reflect.Value){
+	if to.CanSet() {
+		if from.Kind() == to.Kind() {
+			to.Set(from)
+		} else if to.Kind() == reflect.Ptr && from.Kind() == to.Type().Elem().Kind() {
+			newValue := reflect.New(to.Type().Elem())
+			newValue.Elem().Set(from)
+			to.Set(newValue)
+		} else if from.Kind() == reflect.Ptr && from.Elem().Kind() == to.Kind() {
+			to.Set(from.Elem())
+		} else {
+			newValue := reflect.New(to.Type())
+			Convert(from.Interface(), newValue.Interface())
+			if to.Kind() == reflect.Ptr {
+				to.Set(newValue)
+			} else {
+				to.Set(newValue.Elem())
+			}
+		}
+	}
 }
