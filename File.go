@@ -123,6 +123,16 @@ func FixPath(path string) string {
 var fileLocksLock = sync.Mutex{}
 var fileLocks = map[string]*sync.Mutex{}
 
+func LoadX(fileName string, to interface{}) error {
+	var in = map[string]interface{}{}
+	if err := Load(fileName, in); err == nil {
+		Convert(in, to)
+		return nil
+	}else{
+		return err
+	}
+}
+
 func Load(fileName string, to interface{}) error {
 	if strings.HasSuffix(fileName, "yml") || strings.HasSuffix(fileName, "yaml") {
 		return load(fileName, true, to)
@@ -165,6 +175,15 @@ func load(fileName string, isYaml bool, to interface{}) error {
 }
 
 func Save(fileName string, data interface{}) error {
+	if v, ok := data.(io.Reader); ok {
+		if fp, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600); err == nil {
+			defer fp.Close()
+			io.Copy(fp, v)
+			return nil
+		}else{
+			return err
+		}
+	}
 	if strings.HasSuffix(fileName, "yml") || strings.HasSuffix(fileName, "yaml") {
 		return save(fileName, true, data, true)
 	} else {

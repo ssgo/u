@@ -484,6 +484,45 @@ func SplitWithoutNone(s, sep string) []string {
 	}
 }
 
+func SplitArgs(s string) []string {
+	a := make([]string, 0)
+	chars := []rune(s)
+	inQuote := false
+	for i := range chars {
+		c := chars[i]
+		prevC := rune(0)
+		if i > 0 {
+			prevC = chars[i-1]
+		}
+		if c == '"' && prevC != '\\' && ((!inQuote && (i == 0 || chars[i-1] == ' ')) || (inQuote && (i == len(s)-1 || chars[i+1] == ' '))) {
+			inQuote = !inQuote
+		} else {
+			a = append(a, StringIf(c == ' ' && inQuote, "__SPACE__", string(c)))
+		}
+	}
+
+	s = strings.Join(a, "")
+	s = strings.ReplaceAll(s, "\\\"", "\"")
+	a = strings.Split(s, " ")
+	for i := range a {
+		if strings.Contains(a[i], "__SPACE__") {
+			a[i] = strings.ReplaceAll(a[i], "__SPACE__", " ")
+		}
+	}
+	return a
+}
+
+func JoinArgs(arr []string, sep string) string {
+	a := make([]string, 0)
+	for _, s := range arr {
+		if strings.ContainsRune(s, ' ') || strings.ContainsRune(s, '"') {
+			s = `"` + strings.ReplaceAll(s, "\"", "\\\"") + `"`
+		}
+		a = append(a, s)
+	}
+	return strings.Join(a, sep)
+}
+
 func AppendUniqueString(to []string, from string) []string {
 	found := false
 	for _, str := range to {

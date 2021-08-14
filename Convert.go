@@ -83,11 +83,37 @@ func convertMapToStruct(from, to reflect.Value) {
 		if k != nil {
 			v = from.MapIndex(*k)
 		}
+		//fmt.Println("##########", f.Name, k.Interface(), FinalType(v))
 
 		if v.IsValid() {
-			r := convert(v, to.Field(i))
-			if r != nil {
-				to.Field(i).Set(*r)
+			// 支持 Parse 方法对数据进行转换
+			parsed := false
+			if to.CanAddr() {
+				toP := to.Addr()
+				if m, ok := toP.Type().MethodByName("Parse" + toType.Field(i).Name); ok && m.Type.NumIn() == 2 && m.Type.NumOut() == 1 {
+					if m.Type.In(0).String() == toP.Type().String() && m.Type.Out(0).String() == to.Field(i).Type().String(){
+						//fmt.Println(" ===== Parse"+toType.Field(i).Name, m.Type.In(0).String(), m.Type.In(1), m.Type.Out(0), to.Field(i).Type().String())
+						argP := reflect.New(m.Type.In(1))
+						vF := FinalValue(v)
+						r := convert(vF, argP)
+						var argV reflect.Value
+						if r != nil {
+							argV = *r
+						}else{
+							argV = argP.Elem()
+						}
+						out := m.Func.Call([]reflect.Value{toP, argV})
+						//fmt.Println("  >>>", JsonP(out[0].Interface()))
+						to.Field(i).Set(out[0])
+						parsed = true
+					}
+				}
+			}
+			if !parsed {
+				r := convert(v, to.Field(i))
+				if r != nil {
+					to.Field(i).Set(*r)
+				}
 			}
 		}
 	}
@@ -297,7 +323,7 @@ func ToInterfaceArray(in interface{}) []interface{} {
 	return out
 }
 
-func SetValue(to, from reflect.Value){
+func SetValue(to, from reflect.Value) {
 	if to.CanSet() {
 		if from.Kind() == to.Kind() {
 			to.Set(from)
