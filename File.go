@@ -128,7 +128,7 @@ func LoadX(fileName string, to interface{}) error {
 	if err := Load(fileName, in); err == nil {
 		Convert(in, to)
 		return nil
-	}else{
+	} else {
 		return err
 	}
 }
@@ -174,16 +174,17 @@ func load(fileName string, isYaml bool, to interface{}) error {
 	return err
 }
 
-func Save(fileName string, data interface{}) error {
-	if v, ok := data.(io.Reader); ok {
-		if fp, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600); err == nil {
-			defer fp.Close()
-			io.Copy(fp, v)
-			return nil
-		}else{
-			return err
-		}
+func Copy(fileName string, reader io.Reader) error {
+	if fp, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600); err == nil {
+		defer fp.Close()
+		io.Copy(fp, reader)
+		return nil
+	} else {
+		return err
 	}
+}
+
+func Save(fileName string, data interface{}) error {
 	if strings.HasSuffix(fileName, "yml") || strings.HasSuffix(fileName, "yaml") {
 		return save(fileName, true, data, true)
 	} else {
