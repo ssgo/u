@@ -64,22 +64,31 @@ func ReadFileLines(fileName string) ([]string, error) {
 }
 
 func ReadFile(fileName string, maxLen uint) (string, error) {
+	buf, err := ReadFileBytes(fileName, maxLen)
+	return string(buf), err
+}
+
+func ReadFileBytes(fileName string, maxLen uint) ([]byte, error) {
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0400)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	buf := make([]byte, maxLen)
 	n, err := fd.Read(buf)
 	_ = fd.Close()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(buf[0:n]), nil
+	return buf[0:n], nil
 }
 
 func WriteFile(fileName string, content string) error {
+	return WriteFileBytes(fileName, []byte(content))
+}
+
+func WriteFileBytes(fileName string, content []byte) error {
 	CheckPath(fileName)
 
 	fd, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
@@ -87,7 +96,7 @@ func WriteFile(fileName string, content string) error {
 		return err
 	}
 
-	_, err = fd.Write([]byte(content))
+	_, err = fd.Write(content)
 	_ = fd.Close()
 	if err != nil {
 		return err

@@ -494,7 +494,7 @@ func SplitArgs(s string) []string {
 		if i > 0 {
 			prevC = chars[i-1]
 		}
-		if c == '"' && prevC != '\\' && ((!inQuote && (i == 0 || chars[i-1] == ' ')) || (inQuote && (i == len(s)-1 || chars[i+1] == ' '))) {
+		if c == '"' && prevC != '\\' && ((!inQuote && (i == 0 || chars[i-1] == ' ')) || (inQuote && (i == len(s)-1 || len(chars)<=i+1 || chars[i+1] == ' '))) {
 			inQuote = !inQuote
 		} else {
 			a = append(a, StringIf(c == ' ' && inQuote, "__SPACE__", string(c)))
