@@ -5,6 +5,15 @@ import (
 	"strings"
 )
 
+func FixPtr(value interface{}) interface{} {
+	v := reflect.ValueOf(value)
+	if v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+		v = FinalValue(v)
+		return v.Interface()
+	}
+	return value
+}
+
 func FinalType(v reflect.Value) reflect.Type {
 	for v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -91,7 +100,7 @@ func convertMapToStruct(from, to reflect.Value) {
 			if to.CanAddr() {
 				toP := to.Addr()
 				if m, ok := toP.Type().MethodByName("Parse" + toType.Field(i).Name); ok && m.Type.NumIn() == 2 && m.Type.NumOut() == 1 {
-					if m.Type.In(0).String() == toP.Type().String() && m.Type.Out(0).String() == to.Field(i).Type().String(){
+					if m.Type.In(0).String() == toP.Type().String() && m.Type.Out(0).String() == to.Field(i).Type().String() {
 						//fmt.Println(" ===== Parse"+toType.Field(i).Name, m.Type.In(0).String(), m.Type.In(1), m.Type.Out(0), to.Field(i).Type().String())
 						argP := reflect.New(m.Type.In(1))
 						vF := FinalValue(v)
@@ -99,7 +108,7 @@ func convertMapToStruct(from, to reflect.Value) {
 						var argV reflect.Value
 						if r != nil {
 							argV = *r
-						}else{
+						} else {
 							argV = argP.Elem()
 						}
 						out := m.Func.Call([]reflect.Value{toP, argV})

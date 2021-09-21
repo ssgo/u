@@ -44,6 +44,7 @@ func Int64(value interface{}) int64 {
 	if value == nil {
 		return 0
 	}
+	value = FixPtr(value)
 	switch realValue := value.(type) {
 	case int:
 		return int64(realValue)
@@ -90,6 +91,7 @@ func Uint64(value interface{}) uint64 {
 	if value == nil {
 		return 0
 	}
+	value = FixPtr(value)
 	switch realValue := value.(type) {
 	case int:
 		return uint64(realValue)
@@ -136,6 +138,7 @@ func Float64(value interface{}) float64 {
 	if value == nil {
 		return 0
 	}
+	value = FixPtr(value)
 	switch realValue := value.(type) {
 	case int:
 		return float64(realValue)
@@ -188,6 +191,7 @@ func String(value interface{}) string {
 	if value == nil {
 		return ""
 	}
+	value = FixPtr(value)
 	switch realValue := value.(type) {
 	case int:
 		return strconv.FormatInt(int64(realValue), 10)
@@ -232,6 +236,7 @@ func String(value interface{}) string {
 }
 
 func Bool(value interface{}) bool {
+	value = FixPtr(value)
 	switch realValue := value.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
 		return Uint64(realValue) != 0
@@ -252,6 +257,7 @@ func Bool(value interface{}) bool {
 }
 
 func Ints(value interface{}) []int64 {
+	value = FixPtr(value)
 	switch realValue := value.(type) {
 	case []interface{}:
 		result := make([]int64, len(realValue))
@@ -266,6 +272,7 @@ func Ints(value interface{}) []int64 {
 }
 
 func Floats(value interface{}) []float64 {
+	value = FixPtr(value)
 	switch realValue := value.(type) {
 	case []interface{}:
 		result := make([]float64, len(realValue))
@@ -280,6 +287,7 @@ func Floats(value interface{}) []float64 {
 }
 
 func Strings(value interface{}) []string {
+	value = FixPtr(value)
 	switch realValue := value.(type) {
 	case []interface{}:
 		result := make([]string, len(realValue))
@@ -494,7 +502,7 @@ func SplitArgs(s string) []string {
 		if i > 0 {
 			prevC = chars[i-1]
 		}
-		if c == '"' && prevC != '\\' && ((!inQuote && (i == 0 || chars[i-1] == ' ')) || (inQuote && (i == len(s)-1 || len(chars)<=i+1 || chars[i+1] == ' '))) {
+		if c == '"' && prevC != '\\' && ((!inQuote && (i == 0 || chars[i-1] == ' ')) || (inQuote && (i == len(s)-1 || len(chars) <= i+1 || chars[i+1] == ' '))) {
 			inQuote = !inQuote
 		} else {
 			a = append(a, StringIf(c == ' ' && inQuote, "__SPACE__", string(c)))
