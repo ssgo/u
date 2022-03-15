@@ -183,11 +183,26 @@ func load(fileName string, isYaml bool, to interface{}) error {
 	return err
 }
 
-func Copy(fileName string, reader io.Reader) error {
-	if fp, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600); err == nil {
+func CopyToFile(from io.Reader, to string) error {
+	if fp, err := os.OpenFile(to, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600); err == nil {
 		defer fp.Close()
-		io.Copy(fp, reader)
+		io.Copy(fp, from)
 		return nil
+	} else {
+		return err
+	}
+}
+
+func CopyFile(from, to string) error {
+	if writer, err := os.OpenFile(to, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600); err == nil {
+		defer writer.Close()
+		if reader, err := os.OpenFile(from, os.O_RDONLY, 0600); err == nil {
+			defer reader.Close()
+			_, err = io.Copy(writer, reader)
+			return err
+		}else {
+			return err
+		}
 	} else {
 		return err
 	}

@@ -3,6 +3,7 @@ package u
 import (
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"reflect"
 	"strconv"
 	"strings"
@@ -265,10 +266,17 @@ func Ints(value interface{}) []int64 {
 			result[i] = Int64(v)
 		}
 		return result
+	case string:
+		if strings.HasPrefix(realValue, "["){
+			result := make([]int64, 0)
+			UnJson(realValue, &result)
+			return result
+		}else{
+			return []int64{Int64(value)}
+		}
 	default:
 		return []int64{Int64(value)}
 	}
-	return make([]int64, 0)
 }
 
 func Floats(value interface{}) []float64 {
@@ -280,10 +288,17 @@ func Floats(value interface{}) []float64 {
 			result[i] = Float64(v)
 		}
 		return result
+	case string:
+		if strings.HasPrefix(realValue, "["){
+			result := make([]float64, 0)
+			UnJson(realValue, &result)
+			return result
+		}else{
+			return []float64{Float64(value)}
+		}
 	default:
 		return []float64{Float64(value)}
 	}
-	return make([]float64, 0)
 }
 
 func Strings(value interface{}) []string {
@@ -295,10 +310,17 @@ func Strings(value interface{}) []string {
 			result[i] = String(v)
 		}
 		return result
+	case string:
+		if strings.HasPrefix(realValue, "["){
+			result := make([]string, 0)
+			UnJson(realValue, &result)
+			return result
+		}else{
+			return []string{String(value)}
+		}
 	default:
 		return []string{String(value)}
 	}
-	return make([]string, 0)
 }
 
 func Duration(value string) time.Duration {
@@ -554,18 +576,121 @@ func AppendUniqueStrings(to []string, from []string) []string {
 	return to
 }
 
-func Json(value interface{}) string {
+// 修复Golang中Json默认处理HTML转义 < > & 的问题
+func FixJsonBytes(b []byte) []byte {
+	l := len(b)
+	i := 0
+	for j := 0; j < l; j++ {
+		if b[j] == '\\' && j < l-6 && b[j+1] == 'u' && b[j+2] == '0' && b[j+3] == '0' {
+			// 替换
+			var c byte = '0'
+			if b[j+4] == '3' && b[j+5] == 'c' {
+				c = '<'
+			} else if b[j+4] == '3' && b[j+5] == 'e' {
+				c = '>'
+			} else if b[j+4] == '2' && b[j+5] == '6' {
+				c = '&'
+			}
+			if c != '0' {
+				b[i] = c
+				j += 5
+				i++
+				continue
+			}
+		}
+
+		// 复制
+		if i != j {
+			b[i] = b[j]
+		}
+		i++
+	}
+
+	if i != l {
+		return b[0:i]
+	} else {
+		return b
+	}
+}
+
+func JsonBytes(value interface{}) []byte {
 	j, err := json.Marshal(value)
 	if err == nil {
-		return string(j)
+		return FixJsonBytes(j)
 	}
-	return fmt.Sprint(value)
+	return Bytes(value)
+}
+
+func Json(value interface{}) string {
+	return string(JsonBytes(value))
+}
+
+func FixedJson(value interface{}) string {
+	buf := JsonBytes(value)
+	FixUpperCase(buf, nil)
+	return string(buf)
+}
+
+func JsonBytesP(value interface{}) []byte {
+	j, err := json.MarshalIndent(value, "", "  ")
+	if err == nil {
+		return FixJsonBytes(j)
+	}
+	return Bytes(value)
 }
 
 func JsonP(value interface{}) string {
-	j, err := json.MarshalIndent(value, "", "  ")
+	return string(JsonBytesP(value))
+}
+
+func FixedJsonP(value interface{}) string {
+	buf := JsonBytesP(value)
+	FixUpperCase(buf, nil)
+	return string(buf)
+}
+
+func UnJsonBytes(data []byte, value interface{}) interface{} {
+	_ = json.Unmarshal(data, value)
+	return value
+}
+
+func UnJson(str string, value interface{}) interface{} {
+	return UnJsonBytes([]byte(str), value)
+}
+
+func UnJsonMap(str string) map[string]interface{} {
+	value := map[string]interface{}{}
+	UnJsonBytes([]byte(str), &value)
+	return value
+}
+
+func UnJsonArr(str string) []interface{} {
+	value := make([]interface{}, 0)
+	UnJsonBytes([]byte(str), &value)
+	return value
+}
+
+func Yaml(value interface{}) string {
+	j, err := yaml.Marshal(value)
 	if err == nil {
 		return string(j)
 	}
-	return fmt.Sprint(value)
+	return String(value)
+}
+
+func UnYaml(data string, value interface{}) interface{} {
+	_ = yaml.Unmarshal([]byte(data), value)
+	return value
+}
+
+func UnYamlMap(data string) map[string]interface{} {
+	value := map[string]interface{}{}
+	UnYaml(data, &value)
+	return value
+}
+
+func UnYamlArr(data string) []interface{} {
+	value := make([]interface{}, 0)
+	UnYaml(data, &value)
+	return value
 }

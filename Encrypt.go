@@ -254,3 +254,172 @@ func Sha512(data []byte) []byte {
 	hash.Write(data)
 	return hash.Sum([]byte{})
 }
+
+func Base64(data []byte) string {
+	return base64.StdEncoding.EncodeToString(data)
+}
+
+func UrlBase64(data []byte) string {
+	return base64.URLEncoding.EncodeToString(data)
+}
+
+func Base64String(data string) string {
+	return base64.StdEncoding.EncodeToString([]byte(data))
+}
+
+func UrlBase64String(data string) string {
+	return base64.URLEncoding.EncodeToString([]byte(data))
+}
+
+func UnBase64(data string) []byte {
+	buf, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return []byte{}
+	}
+	return buf
+}
+
+func UnUrlBase64(data string) []byte {
+	buf, err := base64.URLEncoding.DecodeString(data)
+	if err != nil {
+		return []byte{}
+	}
+	return buf
+}
+
+func UnBase64String(data string) string {
+	return string(UnBase64(data))
+}
+
+func UnUrlBase64String(data string) string {
+	return string(UnUrlBase64(data))
+}
+
+type Aes struct {
+	key []byte
+	iv  []byte
+}
+
+func NewAes(key, iv []byte) *Aes {
+	return &Aes{key: key, iv: iv}
+}
+
+func (_this *Aes) EncryptBytes(data []byte) (out []byte) {
+	defer func() {
+		if r := recover(); r != nil {
+			out = data
+		}
+	}()
+
+	key, iv := makeKeyIv(_this.key, _this.iv)
+	if iv == nil {
+		iv = key
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return data
+	}
+	origDataBytes := data
+	blockSize := block.BlockSize()
+	origDataBytes = pkcs5Padding(origDataBytes, blockSize)
+	blockMode := cipher.NewCBCEncrypter(block, iv[:blockSize])
+	crypted := make([]byte, len(origDataBytes))
+	blockMode.CryptBlocks(crypted, origDataBytes)
+	return crypted
+}
+
+func (_this *Aes) DecryptBytes(data []byte) (out []byte) {
+	defer func() {
+		if r := recover(); r != nil {
+			out = data
+		}
+	}()
+
+	key, iv := makeKeyIv(_this.key, _this.iv)
+	if iv == nil {
+		iv = key
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	blockSize := block.BlockSize()
+	blockMode := cipher.NewCBCDecrypter(block, iv[:blockSize])
+	origData := make([]byte, len(data))
+	blockMode.CryptBlocks(origData, data)
+	origData = pkcs5UnPadding(origData)
+	return origData
+}
+
+func (_this *Aes) EncryptBytesToHex(data []byte) string {
+	return hex.EncodeToString(_this.EncryptBytes(data))
+}
+
+func (_this *Aes) EncryptBytesToBase64(data []byte) string {
+	return base64.StdEncoding.EncodeToString(_this.EncryptBytes(data))
+}
+
+func (_this *Aes) EncryptBytesToUrlBase64(data []byte) string {
+	return base64.URLEncoding.EncodeToString(_this.EncryptBytes(data))
+}
+
+func (_this *Aes) EncryptStringToHex(data string) string {
+	return hex.EncodeToString(_this.EncryptBytes([]byte(data)))
+}
+
+func (_this *Aes) EncryptStringToBase64(data string) string {
+	return base64.StdEncoding.EncodeToString(_this.EncryptBytes([]byte(data)))
+}
+
+func (_this *Aes) EncryptStringToUrlBase64(data string) string {
+	return base64.URLEncoding.EncodeToString(_this.EncryptBytes([]byte(data)))
+}
+
+func (_this *Aes) DecryptHexToBytes(data string) []byte {
+	buf, err := hex.DecodeString(data)
+	if err != nil {
+		return []byte(data)
+	}
+	return _this.DecryptBytes(buf)
+}
+
+func (_this *Aes) DecryptBase64ToBytes(data string) []byte {
+	buf, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return []byte(data)
+	}
+	return _this.DecryptBytes(buf)
+}
+
+func (_this *Aes) DecryptUrlBase64ToBytes(data string) []byte {
+	buf, err := base64.URLEncoding.DecodeString(data)
+	if err != nil {
+		return []byte(data)
+	}
+	return _this.DecryptBytes(buf)
+}
+
+func (_this *Aes) DecryptHexToString(data string) string {
+	buf, err := hex.DecodeString(data)
+	if err != nil {
+		return data
+	}
+	return string(_this.DecryptBytes(buf))
+}
+
+func (_this *Aes) DecryptBase64ToString(data string) string {
+	buf, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return data
+	}
+	return string(_this.DecryptBytes(buf))
+}
+
+func (_this *Aes) DecryptUrlBase64ToString(data string) string {
+	buf, err := base64.URLEncoding.DecodeString(data)
+	if err != nil {
+		return data
+	}
+	return string(_this.DecryptBytes(buf))
+}

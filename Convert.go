@@ -275,6 +275,7 @@ func convert(from, to interface{}) *reflect.Value {
 
 	fromType := FinalType(fromValue)
 	toType := toValue.Type()
+	var newValue *reflect.Value = nil
 
 	switch toType.Kind() {
 	case reflect.Bool:
@@ -307,6 +308,10 @@ func convert(from, to interface{}) *reflect.Value {
 			convertStructToStruct(fromValue, toValue)
 		}
 	case reflect.Map:
+		if toValue.IsNil() {
+			toValue = reflect.MakeMap(toType)
+			newValue = &toValue
+		}
 		switch fromType.Kind() {
 		case reflect.Map:
 			convertMapToMap(fromValue, toValue)
@@ -316,7 +321,7 @@ func convert(from, to interface{}) *reflect.Value {
 	default:
 		//fmt.Println(" !!!!!!2", fromType.Kind(), toType.Kind(), toType.Elem().Kind())
 	}
-	return nil
+	return newValue
 }
 
 func ToInterfaceArray(in interface{}) []interface{} {
