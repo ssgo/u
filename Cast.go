@@ -231,7 +231,11 @@ func String(value interface{}) string {
 	}
 	t := reflect.TypeOf(value)
 	if t != nil && (t.Kind() == reflect.Struct || t.Kind() == reflect.Map || t.Kind() == reflect.Slice) {
-		return Json(value)
+		j, err := json.Marshal(value)
+		if err == nil {
+			return string(FixJsonBytes(j))
+		}
+		return fmt.Sprint(value)
 	}
 	return fmt.Sprint(value)
 }
@@ -267,11 +271,11 @@ func Ints(value interface{}) []int64 {
 		}
 		return result
 	case string:
-		if strings.HasPrefix(realValue, "["){
+		if strings.HasPrefix(realValue, "[") {
 			result := make([]int64, 0)
 			UnJson(realValue, &result)
 			return result
-		}else{
+		} else {
 			return []int64{Int64(value)}
 		}
 	default:
@@ -289,11 +293,11 @@ func Floats(value interface{}) []float64 {
 		}
 		return result
 	case string:
-		if strings.HasPrefix(realValue, "["){
+		if strings.HasPrefix(realValue, "[") {
 			result := make([]float64, 0)
 			UnJson(realValue, &result)
 			return result
-		}else{
+		} else {
 			return []float64{Float64(value)}
 		}
 	default:
@@ -311,11 +315,11 @@ func Strings(value interface{}) []string {
 		}
 		return result
 	case string:
-		if strings.HasPrefix(realValue, "["){
+		if strings.HasPrefix(realValue, "[") {
 			result := make([]string, 0)
 			UnJson(realValue, &result)
 			return result
-		}else{
+		} else {
 			return []string{String(value)}
 		}
 	default:
