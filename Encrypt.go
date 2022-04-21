@@ -315,6 +315,7 @@ func (_this *Aes) EncryptBytes(data []byte) (out []byte) {
 	if iv == nil {
 		iv = key
 	}
+
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return data

@@ -617,12 +617,30 @@ func FixJsonBytes(b []byte) []byte {
 	}
 }
 
+//func FixMap(interface{}) interface{} {
+//
+//}
+
 func JsonBytes(value interface{}) []byte {
+	//fmt.Println("  &&&&&&&&&& 111", reflect.TypeOf(value))
+	if v1, ok := value.(map[interface{}]interface{}); ok {
+		//fmt.Println("  &&&&&&&&&& 222")
+		v2 := map[string]interface{}{}
+		for k, v := range v1 {
+			v2[String(k)] = v
+		}
+		value = v2
+		//fmt.Println("  &&&&&&&&&& 333", reflect.TypeOf(value), "@@@@@@")
+	}
 	j, err := json.Marshal(value)
 	if err == nil {
+		//fmt.Println("  &&&&&&&&&& 444", string(j), "@@@@@@")
 		return FixJsonBytes(j)
+	} else {
+		//fmt.Println("  &&&&&&&&&& 555", String(value), "@@@@@@")
+		//fmt.Println("error", err.Error())
+		return Bytes(value)
 	}
-	return Bytes(value)
 }
 
 func Json(value interface{}) string {
