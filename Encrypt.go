@@ -16,7 +16,8 @@ import (
 )
 
 type intEncoder struct {
-	Digits string
+	radix  uint8
+	digits string
 }
 
 func (enc *intEncoder) EncodeInt(u uint64) []byte {
@@ -27,18 +28,20 @@ func (enc *intEncoder) AppendInt(buf []byte, u uint64) []byte {
 	if buf == nil {
 		buf = make([]byte, 0)
 	}
-	for u >= 62 {
-		q := u / 62
-		buf = append(buf, enc.Digits[uint(u-q*62)])
+	radix := uint64(enc.radix)
+	for u >= radix {
+		q := u / radix
+		buf = append(buf, enc.digits[uint(u-q*radix)])
 		u = q
 	}
-	buf = append(buf, enc.Digits[uint(u)])
+	buf = append(buf, enc.digits[uint(u)])
 	return buf
 }
 
 func (enc *intEncoder) FillInt(buf []byte, length int) []byte {
+	radix := int(enc.radix)
 	for i := len(buf); i < length; i++ {
-		buf = enc.AppendInt(buf, uint64(GlobalRand1.Intn(62)))
+		buf = enc.AppendInt(buf, uint64(GlobalRand1.Intn(radix)))
 	}
 
 	if len(buf) > length {
@@ -48,22 +51,23 @@ func (enc *intEncoder) FillInt(buf []byte, length int) []byte {
 }
 
 func (enc *intEncoder) DecodeInt(buf []byte) uint64 {
+	radix := uint64(enc.radix)
 	if buf == nil {
 		return 0
 	}
 	var n uint64 = 0
 	for i := len(buf) - 1; i >= 0; i-- {
-		p := strings.IndexByte(enc.Digits, buf[i])
+		p := strings.IndexByte(enc.digits, buf[i])
 		if p >= 0 {
-			n = n*62 + uint64(p)
+			n = n*radix + uint64(p)
 		}
 	}
 	return n
 }
 
-func NewIntEncoder(digits string) (*intEncoder, error) {
-	if len(digits) != 62 {
-		return nil, errors.New("int encoder digits is bad " + digits)
+func NewIntEncoder(digits string, radix uint8) (*intEncoder, error) {
+	if len(digits) < int(radix) {
+		return nil, errors.New("int encoder digits is bad")
 	}
 
 	m := map[int32]bool{}
@@ -75,11 +79,12 @@ func NewIntEncoder(digits string) (*intEncoder, error) {
 	}
 
 	e := intEncoder{}
-	e.Digits = digits
+	e.digits = digits
+	e.radix = radix
 	return &e, nil
 }
 
-var defaultIntEncoder, _ = NewIntEncoder("9ukH1grX75TQS6LzpFAjIivsdZoO0mc8NBwnyYDhtMWEC2V3KaGxfJRPqe4lbU")
+var defaultIntEncoder, _ = NewIntEncoder("9ukH1grX75TQS6LzpFAjIivsdZoO0mc8NBwnyYDhtMWEC2V3KaGxfJRPqe4lbU", 62)
 
 func EncodeInt(u uint64) []byte {
 	return defaultIntEncoder.AppendInt(nil, u)
@@ -423,4 +428,18 @@ func (_this *Aes) DecryptUrlBase64ToString(data string) string {
 		return data
 	}
 	return string(_this.DecryptBytes(buf))
+}
+
+func MakeToken(size int) []byte {
+	token := make([]byte, size)
+	for i := 0; i < size; i++ {
+		var r int
+		if i%2 == 1 {
+			r = GlobalRand1.Intn(255)
+		} else {
+			r = GlobalRand2.Intn(255)
+		}
+		token[i] = byte(r)
+	}
+	return token
 }

@@ -358,3 +358,61 @@ func SetValue(to, from reflect.Value) {
 		}
 	}
 }
+
+type StructInfo struct {
+	Fields       []reflect.StructField
+	Values       map[string]reflect.Value
+	Methods      []reflect.Method
+	MethodValues map[string]reflect.Value
+}
+
+func FlatStruct(data interface{}) *StructInfo {
+	return flatStruct(data, true)
+}
+
+func FlatStructWithUnexported(data interface{}) *StructInfo {
+	return flatStruct(data, false)
+}
+
+func flatStruct(data interface{}, onlyExported bool) *StructInfo {
+	out := &StructInfo{
+		Fields:       make([]reflect.StructField, 0),
+		Values:       make(map[string]reflect.Value),
+		Methods:      make([]reflect.Method, 0),
+		MethodValues: make(map[string]reflect.Value),
+	}
+	makeStructInfo(reflect.ValueOf(data), out, onlyExported)
+	return out
+}
+
+func makeStructInfo(v reflect.Value, out *StructInfo, onlyExported bool) {
+	fv := v
+	if v.Kind() == reflect.Ptr && v.Elem().Kind() == reflect.Struct {
+		fv = v.Elem()
+	}
+	t := v.Type()
+	ft := fv.Type()
+
+	if fv.Kind() == reflect.Struct {
+		if v.Kind() == reflect.Ptr {
+			for i := 0; i < v.NumMethod(); i++ {
+				if onlyExported && !t.Method(i).IsExported() {
+					continue
+				}
+				out.Methods = append(out.Methods, t.Method(i))
+				out.MethodValues[t.Method(i).Name] = v.Method(i)
+			}
+		}
+		for i := 0; i < ft.NumField(); i++ {
+			if onlyExported && !ft.Field(i).IsExported() {
+				continue
+			}
+			if ft.Field(i).Anonymous {
+				makeStructInfo(fv.Field(i), out, onlyExported)
+			} else {
+				out.Fields = append(out.Fields, ft.Field(i))
+				out.Values[ft.Field(i).Name] = fv.Field(i)
+			}
+		}
+	}
+}

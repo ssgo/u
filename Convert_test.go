@@ -243,6 +243,44 @@ func TestConvertStructToStruct(t *testing.T) {
 	}
 }
 
+type TestStructA struct {
+	field1 string
+	Field2 string
+}
+
+func (item *TestStructA) method1(){
+}
+
+func (item *TestStructA) Method2(){
+}
+
+type TestStructB struct {
+	TestStructA
+	field3 string
+	Field4 string
+}
+
+func (item *TestStructB) method3(){
+}
+
+func (item *TestStructB) Method4(){
+}
+
+func TestFlatStruct(t *testing.T) {
+	data := &TestStructB{
+		TestStructA: TestStructA{
+			field1: "111",
+			Field2: "222",
+		},
+		field3: "333",
+		Field4: "444",
+	}
+
+	info := u.FlatStructWithUnexported(data)
+	fmt.Println(u.JsonP(info.Values))
+	fmt.Println(u.JsonP(info.MethodValues))
+}
+
 //func TestToInterfaceArray(t *testing.T) {
 //	in := []int{1,2,3}
 //	out := u.ToInterfaceArray(in)
