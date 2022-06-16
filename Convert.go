@@ -9,7 +9,11 @@ func FixPtr(value interface{}) interface{} {
 	v := reflect.ValueOf(value)
 	if v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
 		v = FinalValue(v)
-		return v.Interface()
+		if v.IsValid() {
+			return v.Interface()
+		} else {
+			return nil
+		}
 	}
 	return value
 }

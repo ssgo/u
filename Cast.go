@@ -193,6 +193,9 @@ func String(value interface{}) string {
 		return ""
 	}
 	value = FixPtr(value)
+	if value == nil {
+		return ""
+	}
 	switch realValue := value.(type) {
 	case int:
 		return strconv.FormatInt(int64(realValue), 10)
