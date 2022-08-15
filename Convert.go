@@ -385,7 +385,11 @@ func flatStruct(data interface{}, onlyExported bool) *StructInfo {
 		Methods:      make([]reflect.Method, 0),
 		MethodValues: make(map[string]reflect.Value),
 	}
-	makeStructInfo(reflect.ValueOf(data), out, onlyExported)
+	if v, ok := data.(reflect.Value); ok {
+		makeStructInfo(v, out, onlyExported)
+	}else {
+		makeStructInfo(reflect.ValueOf(data), out, onlyExported)
+	}
 	return out
 }
 
