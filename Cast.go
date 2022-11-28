@@ -1,6 +1,7 @@
 package u
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v2"
@@ -620,29 +621,129 @@ func FixJsonBytes(b []byte) []byte {
 	}
 }
 
-//func FixMap(interface{}) interface{} {
-//
-//}
+// 支持 map[interface{}]interface{}
+func makeJsonType(inValue reflect.Value) *reflect.Value {
+	if inValue.Kind() == reflect.Interface {
+		inValue = inValue.Elem()
+	}
+	for inValue.Kind() == reflect.Ptr {
+		inValue = inValue.Elem()
+	}
+
+	if !inValue.IsValid() {
+		return nil
+	}
+
+	inType := inValue.Type()
+
+	switch inType.Kind() {
+	case reflect.Map:
+		if inType.Key().Kind() == reflect.Interface {
+			// 测试是否为数组
+			isMap := false
+			for i := len(inValue.MapKeys()); i > 0; i-- {
+				if inValue.MapIndex(reflect.ValueOf(float64(i))).Kind() == reflect.Invalid {
+					isMap = true
+					break
+				}
+			}
+			if isMap {
+				// 处理字典
+				newMap := reflect.MakeMap(reflect.MapOf(reflect.TypeOf(""), inType.Elem()))
+				for _, k := range inValue.MapKeys() {
+					v1 := inValue.MapIndex(k)
+					v2 := makeJsonType(v1)
+					k2 := reflect.ValueOf(fmt.Sprint(k.Interface()))
+					if v2 != nil {
+						newMap.SetMapIndex(k2, *v2)
+					} else {
+						newMap.SetMapIndex(k2, v1)
+					}
+				}
+				return &newMap
+			} else {
+				// 处理数组
+				newArray := reflect.MakeSlice(reflect.SliceOf(inType.Elem()), inValue.Len(), inValue.Len())
+				for i, k := range inValue.MapKeys() {
+					v1 := inValue.MapIndex(k)
+					v2 := makeJsonType(v1)
+					if v2 != nil {
+						newArray.Index(i).Set(*v2)
+					} else {
+						newArray.Index(i).Set(v1)
+					}
+				}
+				return &newArray
+			}
+		} else {
+			for _, k := range inValue.MapKeys() {
+				v := makeJsonType(inValue.MapIndex(k))
+				if v != nil {
+					inValue.SetMapIndex(k, *v)
+				}
+			}
+			return nil
+		}
+	case reflect.Slice:
+		if inType.Elem().Kind() != reflect.Uint8 {
+			for i := inValue.Len() - 1; i >= 0; i-- {
+				v := makeJsonType(inValue.Index(i))
+				if v != nil {
+					inValue.Index(i).Set(*v)
+				}
+			}
+		}
+		return nil
+	case reflect.Struct:
+		for i := inType.NumField() - 1; i >= 0; i-- {
+			f := inType.Field(i)
+			if f.Anonymous {
+				v := makeJsonType(inValue.Field(i))
+				if v != nil {
+					inValue.Field(i).Set(*v)
+				}
+			} else {
+				if f.Name[0] <= 90 {
+					v := makeJsonType(inValue.Field(i))
+					if v != nil {
+						inValue.Field(i).Set(*v)
+					}
+				}
+			}
+		}
+		return nil
+	default:
+		return nil
+	}
+}
 
 func JsonBytes(value interface{}) []byte {
 	//fmt.Println("  &&&&&&&&&& 111", reflect.TypeOf(value))
-	if v1, ok := value.(map[interface{}]interface{}); ok {
-		//fmt.Println("  &&&&&&&&&& 222")
-		v2 := map[string]interface{}{}
-		for k, v := range v1 {
-			v2[String(k)] = v
+	//if v1, ok := value.(map[interface{}]interface{}); ok {
+	//	//fmt.Println("  &&&&&&&&&& 222")
+	//	v2 := map[string]interface{}{}
+	//	for k, v := range v1 {
+	//		v2[String(k)] = v
+	//	}
+	//	value = v2
+	//	//fmt.Println("  &&&&&&&&&& 333", reflect.TypeOf(value), "@@@@@@")
+	//}
+	if j, err := json.Marshal(value); err != nil {
+		// 支持 interface{} 下标
+		v2 := makeJsonType(reflect.ValueOf(value))
+		var value2 interface{}
+		if v2 != nil {
+			value2 = makeJsonType(reflect.ValueOf(value)).Interface()
+		}else{
+			value2 = value
 		}
-		value = v2
-		//fmt.Println("  &&&&&&&&&& 333", reflect.TypeOf(value), "@@@@@@")
-	}
-	j, err := json.Marshal(value)
-	if err == nil {
-		//fmt.Println("  &&&&&&&&&& 444", string(j), "@@@@@@")
+		if r, err := json.Marshal(value2); err != nil {
+			return []byte(fmt.Sprint(value))
+		} else {
+			return FixJsonBytes(r)
+		}
+	}else{
 		return FixJsonBytes(j)
-	} else {
-		//fmt.Println("  &&&&&&&&&& 555", String(value), "@@@@@@")
-		//fmt.Println("error", err.Error())
-		return Bytes(value)
 	}
 }
 
@@ -657,9 +758,11 @@ func FixedJson(value interface{}) string {
 }
 
 func JsonBytesP(value interface{}) []byte {
-	j, err := json.MarshalIndent(value, "", "  ")
+	j := JsonBytes(value)
+	r := bytes.Buffer{}
+	err := json.Indent(&r, j, "", "  ")
 	if err == nil {
-		return FixJsonBytes(j)
+		return FixJsonBytes(r.Bytes())
 	}
 	return Bytes(value)
 }
@@ -675,6 +778,10 @@ func FixedJsonP(value interface{}) string {
 }
 
 func UnJsonBytes(data []byte, value interface{}) interface{} {
+	if value == nil {
+		var v interface{}
+		value = &v
+	}
 	_ = json.Unmarshal(data, value)
 	return value
 }

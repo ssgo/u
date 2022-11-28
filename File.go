@@ -63,12 +63,19 @@ func ReadFileLines(fileName string) ([]string, error) {
 	return outs, nil
 }
 
-func ReadFile(fileName string, maxLen uint) (string, error) {
-	buf, err := ReadFileBytes(fileName, maxLen)
+func ReadFile(fileName string) (string, error) {
+	buf, err := ReadFileBytes(fileName)
 	return string(buf), err
 }
 
-func ReadFileBytes(fileName string, maxLen uint) ([]byte, error) {
+func ReadFileBytes(fileName string) ([]byte, error) {
+	var maxLen uint
+	if fi, _ := os.Stat(fileName); fi != nil {
+		maxLen = uint(fi.Size())
+	}else{
+		maxLen = 1024000
+	}
+
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0400)
 	if err != nil {
 		return nil, err
@@ -200,7 +207,7 @@ func CopyFile(from, to string) error {
 			defer reader.Close()
 			_, err = io.Copy(writer, reader)
 			return err
-		}else {
+		} else {
 			return err
 		}
 	} else {
