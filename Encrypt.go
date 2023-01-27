@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -12,6 +14,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/big"
 	"strings"
 )
 
@@ -428,6 +431,119 @@ func (_this *Aes) DecryptUrlBase64ToString(data string) string {
 		return data
 	}
 	return string(_this.DecryptBytes(buf))
+}
+
+func GenECDSA521Key() (privateKey string, publicKey string, err error) {
+	return GenECDSAKey(elliptic.P521())
+}
+
+func GenECDSA256Key() (privateKey string, publicKey string, err error) {
+	return GenECDSAKey(elliptic.P256())
+}
+
+func GenECDSA384Key() (privateKey string, publicKey string, err error) {
+	return GenECDSAKey(elliptic.P384())
+}
+
+func GenECDSAKey(curve elliptic.Curve) (privateKey string, publicKey string, err error) {
+	priKey, err := ecdsa.GenerateKey(curve, GlobalRand2)
+	if err != nil {
+		return "", "", err
+	}
+	//ecPrivateKey, err := x509.MarshalECPrivateKey(priKey)
+	//if err != nil {
+	//	return "", "", err
+	//}
+	privateKey = base64.URLEncoding.EncodeToString(priKey.D.Bytes())
+	var buf bytes.Buffer
+	buf.Write(priKey.X.Bytes())
+	buf.Write(priKey.Y.Bytes())
+	publicKey = base64.URLEncoding.EncodeToString(buf.Bytes())
+	return
+}
+
+func MakeECDSA256PrivateKey(privateKeyStr string) (priKey *ecdsa.PrivateKey, err error) {
+	return MakeECDSAPrivateKey(privateKeyStr, elliptic.P256())
+}
+
+func MakeECDSA384PrivateKey(privateKeyStr string) (priKey *ecdsa.PrivateKey, err error) {
+	return MakeECDSAPrivateKey(privateKeyStr, elliptic.P384())
+}
+
+func MakeECDSA521PrivateKey(privateKeyStr string) (priKey *ecdsa.PrivateKey, err error) {
+	return MakeECDSAPrivateKey(privateKeyStr, elliptic.P521())
+}
+
+func MakeECDSAPrivateKey(privateKeyStr string, curve elliptic.Curve) (priKey *ecdsa.PrivateKey, err error) {
+	bytes, err := base64.URLEncoding.DecodeString(privateKeyStr)
+	if err != nil {
+		return nil, err
+	}
+	//priKey, err = x509.ParseECPrivateKey(bytes)
+	//if err != nil {
+	//	return nil, err
+	//}
+	x, y := curve.ScalarBaseMult(bytes)
+	return &ecdsa.PrivateKey{
+		PublicKey: ecdsa.PublicKey{
+			Curve: curve,
+			X:     x,
+			Y:     y,
+		},
+		D: new(big.Int).SetBytes(bytes),
+	}, nil
+}
+
+func MakeECDSA256PublicKey(publicKeyStr string) (pubKey *ecdsa.PublicKey, err error) {
+	return MakeECDSAPublicKey(publicKeyStr, elliptic.P256())
+}
+
+func MakeECDSA384PublicKey(publicKeyStr string) (pubKey *ecdsa.PublicKey, err error) {
+	return MakeECDSAPublicKey(publicKeyStr, elliptic.P384())
+}
+
+func MakeECDSA521PublicKey(publicKeyStr string) (pubKey *ecdsa.PublicKey, err error) {
+	return MakeECDSAPublicKey(publicKeyStr, elliptic.P521())
+}
+
+func MakeECDSAPublicKey(publicKeyStr string, curve elliptic.Curve) (pubKey *ecdsa.PublicKey, err error) {
+	bytes, err := base64.URLEncoding.DecodeString(publicKeyStr)
+	if err != nil {
+		return nil, err
+	}
+	x := new(big.Int)
+	y := new(big.Int)
+	byteLen := len(bytes) / 2
+	x.SetBytes(bytes[0:byteLen])
+	y.SetBytes(bytes[byteLen:])
+	pub := ecdsa.PublicKey{Curve: curve, X: x, Y: y}
+	pubKey = &pub
+	return
+}
+
+func SignECDSA(content []byte, priKey *ecdsa.PrivateKey) (signature string, err error) {
+	r, s, err := ecdsa.Sign(GlobalRand1, priKey, Sha512(content))
+	if err != nil {
+		return "", err
+	}
+	var buf bytes.Buffer
+	buf.Write(r.Bytes())
+	buf.Write(s.Bytes())
+	signature = base64.URLEncoding.EncodeToString(buf.Bytes())
+	return
+}
+
+func VerifyECDSA(content []byte, signature string, pubKey *ecdsa.PublicKey) bool {
+	bytes, e := base64.URLEncoding.DecodeString(signature)
+	if e != nil {
+		return false
+	}
+	r := new(big.Int)
+	s := new(big.Int)
+	byteLen := len(bytes) / 2
+	r.SetBytes(bytes[0:byteLen])
+	s.SetBytes(bytes[byteLen:])
+	return ecdsa.Verify(pubKey, Sha512(content), r, s)
 }
 
 func MakeToken(size int) []byte {
