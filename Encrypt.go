@@ -13,7 +13,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"math/big"
 	"strings"
 )
@@ -106,41 +105,15 @@ func DecodeInt(buf []byte) uint64 {
 }
 
 func EncryptAes(origData string, key []byte, iv []byte) (out string) {
-	return EncryptAesBytes([]byte(origData), key, iv)
+	buf, _ := EncryptAesBytes([]byte(origData), key, iv)
+	return base64.URLEncoding.EncodeToString(buf)
 }
 
-func EncryptAesBytes(origData []byte, key []byte, iv []byte) (out string) {
-	defer func() {
-		if r := recover(); r != nil {
-			out = ""
-		}
-	}()
-
-	key, iv = makeKeyIv(key, iv)
-	if iv == nil {
-		iv = key
-	}
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return ""
-	}
-	origDataBytes := origData
-	blockSize := block.BlockSize()
-	origDataBytes = pkcs5Padding(origDataBytes, blockSize)
-	blockMode := cipher.NewCBCEncrypter(block, iv[:blockSize])
-	crypted := make([]byte, len(origDataBytes))
-	blockMode.CryptBlocks(crypted, origDataBytes)
-	return base64.URLEncoding.EncodeToString(crypted)
-}
-
-func DecryptAes(crypted string, key []byte, iv []byte) (out string) {
-	return String(DecryptAesBytes(crypted, key, iv))
-}
-
-func DecryptAesBytes(crypted string, key []byte, iv []byte) (out []byte) {
+func EncryptAesBytes(origData []byte, key []byte, iv []byte) (out []byte, outErr error) {
 	defer func() {
 		if r := recover(); r != nil {
 			out = nil
+			outErr = errors.New("failed to encrypt aes")
 		}
 	}()
 
@@ -148,24 +121,56 @@ func DecryptAesBytes(crypted string, key []byte, iv []byte) (out []byte) {
 	if iv == nil {
 		iv = key
 	}
+	if block, err := aes.NewCipher(key); err != nil {
+		return origData, err
+	} else {
+		origDataBytes := origData
+		blockSize := block.BlockSize()
+		origDataBytes = pkcs5Padding(origDataBytes, blockSize)
+		blockMode := cipher.NewCBCEncrypter(block, iv[:blockSize])
+		crypted := make([]byte, len(origDataBytes))
+		blockMode.CryptBlocks(crypted, origDataBytes)
+		return crypted, nil
+	}
+}
+
+func DecryptAes(crypted string, key []byte, iv []byte) (out string) {
 	var base64Encoding *base64.Encoding
 	if strings.ContainsRune(crypted, '_') || strings.ContainsRune(crypted, '-') {
 		base64Encoding = base64.URLEncoding
 	} else {
 		base64Encoding = base64.StdEncoding
 	}
-	cryptedBytes, err := base64Encoding.DecodeString(crypted)
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		fmt.Println(err)
-		return nil
+	if cryptedBytes, err := base64Encoding.DecodeString(crypted); err != nil {
+		return crypted
+	} else {
+		buf, _ := DecryptAesBytes(cryptedBytes, key, iv)
+		return String(buf)
 	}
-	blockSize := block.BlockSize()
-	blockMode := cipher.NewCBCDecrypter(block, iv[:blockSize])
-	origData := make([]byte, len(cryptedBytes))
-	blockMode.CryptBlocks(origData, cryptedBytes)
-	origData = pkcs5UnPadding(origData)
-	return origData
+}
+
+func DecryptAesBytes(cryptedBytes []byte, key []byte, iv []byte) (out []byte, outErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			out = nil
+			outErr = errors.New("failed to decrypt aes")
+		}
+	}()
+
+	key, iv = makeKeyIv(key, iv)
+	if iv == nil {
+		iv = key
+	}
+	if block, err := aes.NewCipher(key); err != nil {
+		return cryptedBytes, err
+	} else {
+		blockSize := block.BlockSize()
+		blockMode := cipher.NewCBCDecrypter(block, iv[:blockSize])
+		origData := make([]byte, len(cryptedBytes))
+		blockMode.CryptBlocks(origData, cryptedBytes)
+		origData = pkcs5UnPadding(origData)
+		return origData, nil
+	}
 }
 
 func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
@@ -312,77 +317,85 @@ func NewAes(key, iv []byte) *Aes {
 	return &Aes{key: key, iv: iv}
 }
 
-func (_this *Aes) EncryptBytes(data []byte) (out []byte) {
-	defer func() {
-		if r := recover(); r != nil {
-			out = data
-		}
-	}()
-
-	key, iv := makeKeyIv(_this.key, _this.iv)
-	if iv == nil {
-		iv = key
-	}
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return data
-	}
-	origDataBytes := data
-	blockSize := block.BlockSize()
-	origDataBytes = pkcs5Padding(origDataBytes, blockSize)
-	blockMode := cipher.NewCBCEncrypter(block, iv[:blockSize])
-	crypted := make([]byte, len(origDataBytes))
-	blockMode.CryptBlocks(crypted, origDataBytes)
-	return crypted
+func (_this *Aes) EncryptBytes(data []byte) (out []byte, outErr error) {
+	return EncryptAesBytes(data, _this.key, _this.iv)
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		out = data
+	//	}
+	//}()
+	//
+	//key, iv := makeKeyIv(_this.key, _this.iv)
+	//if iv == nil {
+	//	iv = key
+	//}
+	//
+	//block, err := aes.NewCipher(key)
+	//if err != nil {
+	//	return data
+	//}
+	//origDataBytes := data
+	//blockSize := block.BlockSize()
+	//origDataBytes = pkcs5Padding(origDataBytes, blockSize)
+	//blockMode := cipher.NewCBCEncrypter(block, iv[:blockSize])
+	//crypted := make([]byte, len(origDataBytes))
+	//blockMode.CryptBlocks(crypted, origDataBytes)
+	//return crypted
 }
 
-func (_this *Aes) DecryptBytes(data []byte) (out []byte) {
-	defer func() {
-		if r := recover(); r != nil {
-			out = data
-		}
-	}()
-
-	key, iv := makeKeyIv(_this.key, _this.iv)
-	if iv == nil {
-		iv = key
-	}
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	blockSize := block.BlockSize()
-	blockMode := cipher.NewCBCDecrypter(block, iv[:blockSize])
-	origData := make([]byte, len(data))
-	blockMode.CryptBlocks(origData, data)
-	origData = pkcs5UnPadding(origData)
-	return origData
+func (_this *Aes) DecryptBytes(data []byte) (out []byte, outErr error) {
+	return DecryptAesBytes(data, _this.key, _this.iv)
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		out = data
+	//	}
+	//}()
+	//
+	//key, iv := makeKeyIv(_this.key, _this.iv)
+	//if iv == nil {
+	//	iv = key
+	//}
+	//block, err := aes.NewCipher(key)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return nil
+	//}
+	//blockSize := block.BlockSize()
+	//blockMode := cipher.NewCBCDecrypter(block, iv[:blockSize])
+	//origData := make([]byte, len(data))
+	//blockMode.CryptBlocks(origData, data)
+	//origData = pkcs5UnPadding(origData)
+	//return origData
 }
 
 func (_this *Aes) EncryptBytesToHex(data []byte) string {
-	return hex.EncodeToString(_this.EncryptBytes(data))
+	buf, _ := _this.EncryptBytes(data)
+	return hex.EncodeToString(buf)
 }
 
 func (_this *Aes) EncryptBytesToBase64(data []byte) string {
-	return base64.StdEncoding.EncodeToString(_this.EncryptBytes(data))
+	buf, _ := _this.EncryptBytes(data)
+	return base64.StdEncoding.EncodeToString(buf)
 }
 
 func (_this *Aes) EncryptBytesToUrlBase64(data []byte) string {
-	return base64.URLEncoding.EncodeToString(_this.EncryptBytes(data))
+	buf, _ := _this.EncryptBytes(data)
+	return base64.URLEncoding.EncodeToString(buf)
 }
 
 func (_this *Aes) EncryptStringToHex(data string) string {
-	return hex.EncodeToString(_this.EncryptBytes([]byte(data)))
+	buf, _ := _this.EncryptBytes([]byte(data))
+	return hex.EncodeToString(buf)
 }
 
 func (_this *Aes) EncryptStringToBase64(data string) string {
-	return base64.StdEncoding.EncodeToString(_this.EncryptBytes([]byte(data)))
+	buf, _ := _this.EncryptBytes([]byte(data))
+	return base64.StdEncoding.EncodeToString(buf)
 }
 
 func (_this *Aes) EncryptStringToUrlBase64(data string) string {
-	return base64.URLEncoding.EncodeToString(_this.EncryptBytes([]byte(data)))
+	buf, _ := _this.EncryptBytes([]byte(data))
+	return base64.URLEncoding.EncodeToString(buf)
 }
 
 func (_this *Aes) DecryptHexToBytes(data string) []byte {
@@ -390,7 +403,8 @@ func (_this *Aes) DecryptHexToBytes(data string) []byte {
 	if err != nil {
 		return []byte(data)
 	}
-	return _this.DecryptBytes(buf)
+	buf1, _ := _this.DecryptBytes(buf)
+	return buf1
 }
 
 func (_this *Aes) DecryptBase64ToBytes(data string) []byte {
@@ -398,7 +412,8 @@ func (_this *Aes) DecryptBase64ToBytes(data string) []byte {
 	if err != nil {
 		return []byte(data)
 	}
-	return _this.DecryptBytes(buf)
+	buf1, _ := _this.DecryptBytes(buf)
+	return buf1
 }
 
 func (_this *Aes) DecryptUrlBase64ToBytes(data string) []byte {
@@ -406,7 +421,8 @@ func (_this *Aes) DecryptUrlBase64ToBytes(data string) []byte {
 	if err != nil {
 		return []byte(data)
 	}
-	return _this.DecryptBytes(buf)
+	buf1, _ := _this.DecryptBytes(buf)
+	return buf1
 }
 
 func (_this *Aes) DecryptHexToString(data string) string {
@@ -414,7 +430,8 @@ func (_this *Aes) DecryptHexToString(data string) string {
 	if err != nil {
 		return data
 	}
-	return string(_this.DecryptBytes(buf))
+	buf1, _ := _this.DecryptBytes(buf)
+	return string(buf1)
 }
 
 func (_this *Aes) DecryptBase64ToString(data string) string {
@@ -422,7 +439,8 @@ func (_this *Aes) DecryptBase64ToString(data string) string {
 	if err != nil {
 		return data
 	}
-	return string(_this.DecryptBytes(buf))
+	buf1, _ := _this.DecryptBytes(buf)
+	return string(buf1)
 }
 
 func (_this *Aes) DecryptUrlBase64ToString(data string) string {
@@ -430,7 +448,8 @@ func (_this *Aes) DecryptUrlBase64ToString(data string) string {
 	if err != nil {
 		return data
 	}
-	return string(_this.DecryptBytes(buf))
+	buf1, _ := _this.DecryptBytes(buf)
+	return string(buf1)
 }
 
 func GenECDSA521Key() (privateKey string, publicKey string, err error) {
