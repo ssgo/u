@@ -235,11 +235,12 @@ func String(value interface{}) string {
 	}
 	t := reflect.TypeOf(value)
 	if t != nil && (t.Kind() == reflect.Struct || t.Kind() == reflect.Map || t.Kind() == reflect.Slice) {
-		j, err := json.Marshal(value)
-		if err == nil {
-			return string(FixJsonBytes(j))
-		}
-		return fmt.Sprint(value)
+		//j, err := json.Marshal(value)
+		//if err == nil {
+		//	return string(FixJsonBytes(j))
+		//}
+		//return fmt.Sprint(value)
+		return Json(value)
 	}
 	return fmt.Sprint(value)
 }
