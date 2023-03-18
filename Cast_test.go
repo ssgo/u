@@ -2,6 +2,7 @@ package u_test
 
 import (
 	"github.com/ssgo/u"
+	"strings"
 	"testing"
 	"time"
 )
@@ -31,6 +32,87 @@ func TestFixUpperCase2(t *testing.T) {
 	rights := "{\"FLAG\":\"321\",\"app\":\"\",\"info\":\"stopping router\",\"logTime\":1557057463.721667,\"logType\":\"server\",\"node\":\"10.59.5.226:18811\",\"proto\":\"http\",\"startTime\":1557057463.6995,\"traceId\":\"g6aXzbekTGZ\",\"weight\":1}"
 	if string(buf) != rights {
 		t.Error("FixUpperCase2 failed")
+	}
+}
+
+func TestFixUpperCase3(t *testing.T) {
+	type Item struct {
+		Name string
+		Set1 map[string]string
+		Set2 map[string]string `keepKey`
+		Set3 map[string]string `keepSubKey`
+		Set4 map[string]string `keepKey keepSubKey`
+	}
+	type List struct {
+		DefaultSet1 map[string]string
+		DefaultSet2 map[string]string `keepKey`
+		DefaultSet3 map[string]string `keepSubKey`
+		DefaultSet4 map[string]string `keepKey,keepSubKey`
+		List1       []Item
+		List2       []Item `keepKey`
+		List3       []Item `keepSubKey`
+		List4       []Item `keepKey keepSubKey`
+	}
+	set := map[string]string{
+		"abc1": "1",
+		"Abc2": "2",
+	}
+	item := Item{
+		Name: "测试",
+		Set1: set,
+		Set2: set,
+		Set3: set,
+		Set4: set,
+	}
+	list := List{
+		DefaultSet1: set,
+		DefaultSet2: set,
+		DefaultSet3: set,
+		DefaultSet4: set,
+		List1:       []Item{item},
+		List2:       []Item{item},
+		List3:       []Item{item},
+		List4:       []Item{item},
+	}
+
+	excludeKeys := u.MakeExcludeUpperKeys(list, "")
+	//fmt.Println(u.JsonP(excludeKeys), ".")
+
+	buf := u.JsonBytes(list)
+	u.FixUpperCase(buf, excludeKeys)
+	//fmt.Println(string(buf))
+	str := string(buf)
+
+	if !strings.Contains(str, `"defaultSet1":{"abc2":"2","abc1":"1"}`) {
+		t.Error("FixUpperCase3 failed on defaultSet1")
+	}
+
+	if !strings.Contains(str, `"DefaultSet2":{"abc2":"2","abc1":"1"}`) {
+		t.Error("FixUpperCase3 failed on defaultSet2")
+	}
+
+	if !strings.Contains(str, `"defaultSet3":{"Abc2":"2","abc1":"1"}`) {
+		t.Error("FixUpperCase3 failed on defaultSet3")
+	}
+
+	if !strings.Contains(str, `"DefaultSet4":{"Abc2":"2","abc1":"1"}`) {
+		t.Error("FixUpperCase3 failed on defaultSet4")
+	}
+
+	if !strings.Contains(str, `"list1":[{"name":"测试","set1":{"abc2":"2","abc1":"1"},"Set2":{"abc2":"2","abc1":"1"},"set3":{"Abc2":"2","abc1":"1"},"Set4":{"Abc2":"2","abc1":"1"}}]`) {
+		t.Error("FixUpperCase3 failed on list1")
+	}
+
+	if !strings.Contains(str, `"List2":[{"name":"测试","set1":{"abc2":"2","abc1":"1"},"Set2":{"abc2":"2","abc1":"1"},"set3":{"Abc2":"2","abc1":"1"},"Set4":{"Abc2":"2","abc1":"1"}}]`) {
+		t.Error("FixUpperCase3 failed on list2")
+	}
+
+	if !strings.Contains(str, `"list3":[{"Name":"测试","Set1":{"Abc2":"2","abc1":"1"},"Set2":{"Abc2":"2","abc1":"1"},"Set3":{"Abc2":"2","abc1":"1"},"Set4":{"Abc2":"2","abc1":"1"}}]`) {
+		t.Error("FixUpperCase3 failed on list3")
+	}
+
+	if !strings.Contains(str, `"List4":[{"Name":"测试","Set1":{"Abc2":"2","abc1":"1"},"Set2":{"Abc2":"2","abc1":"1"},"Set3":{"Abc2":"2","abc1":"1"},"Set4":{"Abc2":"2","abc1":"1"}}]`) {
+		t.Error("FixUpperCase3 failed on list4")
 	}
 }
 

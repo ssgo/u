@@ -189,7 +189,16 @@ func Float64(value interface{}) float64 {
 func Bytes(value interface{}) []byte {
 	return []byte(String(value))
 }
+
 func String(value interface{}) string {
+	return _string(value, false)
+}
+
+func StringP(value interface{}) string {
+	return _string(value, true)
+}
+
+func _string(value interface{}, p bool) string {
 	if value == nil {
 		return ""
 	}
@@ -240,7 +249,7 @@ func String(value interface{}) string {
 		//	return string(FixJsonBytes(j))
 		//}
 		//return fmt.Sprint(value)
-		return Json(value)
+		return JsonP(value)
 	}
 	return fmt.Sprint(value)
 }
@@ -365,6 +374,67 @@ func GetUpperName(s string) string {
 	return string(buf)
 }
 
+func MakeExcludeUpperKeys(data interface{}, prefix string) []string {
+	oriPrefix := prefix
+	if prefix != "" {
+		prefix += "."
+	}
+	outs := make([]string, 0)
+
+	var dataV reflect.Value
+	if v, ok := data.(reflect.Value); ok {
+		dataV = v
+	}else{
+		dataV = reflect.ValueOf(data)
+	}
+	inValue := FinalValue(dataV)
+	if !inValue.IsValid() {
+		return nil
+	}
+
+	inType := inValue.Type()
+	switch inType.Kind() {
+	case reflect.Map:
+		for _, k := range inValue.MapKeys() {
+			r := MakeExcludeUpperKeys(inValue.MapIndex(k), prefix+String(k.Interface()))
+			if len(r) > 0 {
+				outs = append(outs, r...)
+			}
+		}
+	case reflect.Slice:
+		if inType.Elem().Kind() != reflect.Uint8 {
+			for i := inValue.Len() - 1; i >= 0; i-- {
+				r := MakeExcludeUpperKeys(inValue.Index(i), prefix)
+				if len(r) > 0 {
+					outs = append(outs, r...)
+				}
+			}
+		}
+	case reflect.Struct:
+		for i := inType.NumField() - 1; i >= 0; i-- {
+			f := inType.Field(i)
+			if f.Anonymous {
+				r := MakeExcludeUpperKeys(inValue.Field(i), oriPrefix)
+				if len(r) > 0 {
+					outs = append(outs, r...)
+				}
+			} else {
+				if strings.Contains(String(f.Tag), "keepKey") {
+					outs = append(outs, prefix+f.Name)
+				}
+				if strings.Contains(String(f.Tag), "keepSubKey") {
+					outs = append(outs, prefix+f.Name+".")
+				}
+				r := MakeExcludeUpperKeys(inValue.Field(i), prefix+f.Name)
+				if len(r) > 0 {
+					outs = append(outs, r...)
+				}
+			}
+		}
+	}
+	return outs
+}
+
 func FixUpperCase(data []byte, excludesKeys []string) {
 	n := len(data)
 	types := make([]bool, 0)
@@ -420,16 +490,22 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 					// 是否排除
 					excluded := false
 					for _, ek := range excludesKeys {
-						for j := tpos - 1; j >= 0; j-- {
-							if strings.Index(keys[j], ek) != -1 {
-								excluded = true
-								break
-							}
+						if strings.HasSuffix(ek, ".") {
+							excluded = strings.HasPrefix(strings.Join(keys[0:tpos+1], "."), ek)
+						}else{
+							excluded = strings.Join(keys[0:tpos+1], ".") == ek
 						}
+						//for j := tpos - 1; j >= 0; j-- {
+						//	if strings.Index(keys[j], ek) != -1 {
+						//		excluded = true
+						//		break
+						//	}
+						//}
 						if excluded {
 							break
 						}
 					}
+					//fmt.Println(">", strings.Join(keys[0:tpos+1], "."), excluded)
 					if !excluded {
 						keyStr := keys[tpos]
 						hasLower := false

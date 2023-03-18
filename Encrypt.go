@@ -541,11 +541,12 @@ func MakeECDSAPublicKey(publicKeyStr string, curve elliptic.Curve) (pubKey *ecds
 }
 
 func SignECDSA(content []byte, priKey *ecdsa.PrivateKey) (signature string, err error) {
-	r, s, err := ecdsa.Sign(GlobalRand1, priKey, Sha512(content))
+	r, s, err := ecdsa.Sign(GlobalRand1, priKey, Sha256(content))
 	if err != nil {
 		return "", err
 	}
 	var buf bytes.Buffer
+	buf.WriteByte(byte(len(r.Bytes())))
 	buf.Write(r.Bytes())
 	buf.Write(s.Bytes())
 	signature = base64.URLEncoding.EncodeToString(buf.Bytes())
@@ -559,10 +560,11 @@ func VerifyECDSA(content []byte, signature string, pubKey *ecdsa.PublicKey) bool
 	}
 	r := new(big.Int)
 	s := new(big.Int)
-	byteLen := len(bytes) / 2
-	r.SetBytes(bytes[0:byteLen])
-	s.SetBytes(bytes[byteLen:])
-	return ecdsa.Verify(pubKey, Sha512(content), r, s)
+	byteLen := bytes[0]
+	r.SetBytes(bytes[1:byteLen+1])
+	s.SetBytes(bytes[byteLen+1:])
+	//fmt.Println(len(bytes[0:byteLen]), len(bytes[byteLen:]), "/", len(bytes))
+	return ecdsa.Verify(pubKey, Sha256(content), r, s)
 }
 
 func MakeToken(size int) []byte {
