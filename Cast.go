@@ -478,7 +478,7 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 					continue
 				}
 				if data[i] == '"' {
-					if keyPos >= 0 && excludesKeys != nil {
+					if keyPos >= 0 && excludesKeys != nil && len(excludesKeys) > 0 {
 						keys[tpos] = string(data[keyPos:i])
 					}
 					break
@@ -486,7 +486,7 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 			}
 
 			if keyPos >= 0 && (data[keyPos] >= 'A' && data[keyPos] <= 'Z') {
-				if excludesKeys != nil {
+				if excludesKeys != nil && len(excludesKeys) > 0 {
 					// 是否排除
 					excluded := false
 					for _, ek := range excludesKeys {
@@ -830,7 +830,18 @@ func Json(value interface{}) string {
 
 func FixedJson(value interface{}) string {
 	buf := JsonBytes(value)
-	FixUpperCase(buf, nil)
+	excludeKeys := MakeExcludeUpperKeys(buf, "")
+	bytesResult, err := json.Marshal(buf)
+	if err != nil || (len(bytesResult) == 4 && string(bytesResult) == "null") {
+		t := reflect.TypeOf(buf)
+		if t.Kind() == reflect.Slice {
+			bytesResult = []byte("[]")
+		}
+		if t.Kind() == reflect.Map {
+			bytesResult = []byte("{}")
+		}
+	}
+	FixUpperCase(buf, excludeKeys)
 	return string(buf)
 }
 
@@ -849,9 +860,22 @@ func JsonP(value interface{}) string {
 }
 
 func FixedJsonP(value interface{}) string {
-	buf := JsonBytesP(value)
-	FixUpperCase(buf, nil)
-	return string(buf)
+	buf := JsonBytes(value)
+	excludeKeys := MakeExcludeUpperKeys(buf, "")
+	bytesResult, err := json.Marshal(buf)
+	if err != nil || (len(bytesResult) == 4 && string(bytesResult) == "null") {
+		t := reflect.TypeOf(buf)
+		if t.Kind() == reflect.Slice {
+			bytesResult = []byte("[]")
+		}
+		if t.Kind() == reflect.Map {
+			bytesResult = []byte("{}")
+		}
+	}
+	FixUpperCase(buf, excludeKeys)
+	r := bytes.Buffer{}
+	json.Indent(&r, buf, "", "  ")
+	return r.String()
 }
 
 func UnJsonBytes(data []byte, value interface{}) interface{} {
