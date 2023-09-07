@@ -51,8 +51,10 @@ func FinalValue(v reflect.Value) reflect.Value {
 
 func FixNilValue(v reflect.Value) {
 	t := v.Type()
-	for t.Kind() == reflect.Ptr && v.IsNil() {
-		v.Set(reflect.New(v.Type().Elem()))
+	for t.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
 		v = v.Elem()
 		t = t.Elem()
 	}
@@ -288,6 +290,7 @@ func convert(from, to interface{}) *reflect.Value {
 		toValue.Set(reflect.ValueOf(fromValue.Interface()))
 	case reflect.String:
 		toValue.SetString(String(fromValue.Interface()))
+		newValue = &toValue
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		toValue.SetInt(Int64(fromValue.Interface()))
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -295,10 +298,10 @@ func convert(from, to interface{}) *reflect.Value {
 	case reflect.Float32, reflect.Float64:
 		toValue.SetFloat(Float64(fromValue.Interface()))
 	case reflect.Slice:
-		if toType.Kind() == reflect.Slice && toType.Elem().Kind() == reflect.Uint8 {
-			toValue.SetBytes(Bytes(fromValue.Interface()))
-		} else if fromType.Kind() == reflect.Slice {
+		if fromType.Kind() == reflect.Slice {
 			return convertSliceToSlice(fromValue, toValue)
+		} else if toType.Kind() == reflect.Slice && toType.Elem().Kind() == reflect.Uint8 {
+			toValue.SetBytes(Bytes(fromValue.Interface()))
 		} else {
 			tmpSlice := reflect.MakeSlice(reflect.SliceOf(fromType), 1, 1)
 			tmpSlice.Index(0).Set(fromValue)
