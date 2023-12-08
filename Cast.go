@@ -852,7 +852,7 @@ func JsonBytesP(value interface{}) []byte {
 	if err == nil {
 		return FixJsonBytes(r.Bytes())
 	}
-	return Bytes(value)
+	return j
 }
 
 func JsonP(value interface{}) string {
