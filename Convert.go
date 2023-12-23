@@ -298,10 +298,10 @@ func convert(from, to interface{}) *reflect.Value {
 	case reflect.Float32, reflect.Float64:
 		toValue.SetFloat(Float64(fromValue.Interface()))
 	case reflect.Slice:
-		if fromType.Kind() == reflect.Slice {
-			return convertSliceToSlice(fromValue, toValue)
-		} else if toType.Kind() == reflect.Slice && toType.Elem().Kind() == reflect.Uint8 {
+		if toType.Elem().Kind() == reflect.Uint8 {
 			toValue.SetBytes(Bytes(fromValue.Interface()))
+		} else if fromType.Kind() == reflect.Slice {
+			return convertSliceToSlice(fromValue, toValue)
 		} else {
 			tmpSlice := reflect.MakeSlice(reflect.SliceOf(fromType), 1, 1)
 			tmpSlice.Index(0).Set(fromValue)
