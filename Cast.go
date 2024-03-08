@@ -249,7 +249,11 @@ func _string(value interface{}, p bool) string {
 		//	return string(FixJsonBytes(j))
 		//}
 		//return fmt.Sprint(value)
-		return JsonP(value)
+		if p {
+			return JsonP(value)
+		} else {
+			return Json(value)
+		}
 	}
 	return fmt.Sprint(value)
 }
@@ -384,7 +388,7 @@ func MakeExcludeUpperKeys(data interface{}, prefix string) []string {
 	var dataV reflect.Value
 	if v, ok := data.(reflect.Value); ok {
 		dataV = v
-	}else{
+	} else {
 		dataV = reflect.ValueOf(data)
 	}
 	inValue := FinalValue(dataV)
@@ -492,7 +496,7 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 					for _, ek := range excludesKeys {
 						if strings.HasSuffix(ek, ".") {
 							excluded = strings.HasPrefix(strings.Join(keys[0:tpos+1], "."), ek)
-						}else{
+						} else {
 							excluded = strings.Join(keys[0:tpos+1], ".") == ek
 						}
 						//for j := tpos - 1; j >= 0; j-- {
@@ -811,7 +815,7 @@ func JsonBytes(value interface{}) []byte {
 		var value2 interface{}
 		if v2 != nil {
 			value2 = makeJsonType(reflect.ValueOf(value)).Interface()
-		}else{
+		} else {
 			value2 = value
 		}
 		if r, err := json.Marshal(value2); err != nil {
@@ -819,7 +823,7 @@ func JsonBytes(value interface{}) []byte {
 		} else {
 			return FixJsonBytes(r)
 		}
-	}else{
+	} else {
 		return FixJsonBytes(j)
 	}
 }
