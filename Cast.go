@@ -519,7 +519,6 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 							break
 						}
 					}
-					fmt.Println(">", checkStr, excluded)
 					if !excluded {
 						keyStr := keys[tpos]
 						hasLower := false
