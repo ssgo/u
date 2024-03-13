@@ -138,6 +138,18 @@ func convertStructToStruct(from, to reflect.Value) {
 	keyMap := map[string]int{}
 	fixedKeyMap := map[string]int{}
 	fromType := from.Type()
+	toType := to.Type()
+
+	// copy when same type
+	ft := FinalType(from)
+	tt := FinalType(to)
+	if ft == tt {
+		fv := FinalValue(from)
+		tv := FinalValue(to)
+		tv.Set(fv)
+		return
+	}
+
 	for i := fromType.NumField() - 1; i >= 0; i-- {
 		if fromType.Field(i).Name[0] > 90 {
 			continue
@@ -148,7 +160,6 @@ func convertStructToStruct(from, to reflect.Value) {
 		}
 	}
 
-	toType := to.Type()
 	for i := toType.NumField() - 1; i >= 0; i-- {
 		f := toType.Field(i)
 		if f.Anonymous {
@@ -390,7 +401,7 @@ func flatStruct(data interface{}, onlyExported bool) *StructInfo {
 	}
 	if v, ok := data.(reflect.Value); ok {
 		makeStructInfo(v, out, onlyExported)
-	}else {
+	} else {
 		makeStructInfo(reflect.ValueOf(data), out, onlyExported)
 	}
 	return out
