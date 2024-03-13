@@ -127,11 +127,18 @@ func convertMapToStruct(from, to reflect.Value) {
 			if !parsed {
 				r := convert(v, to.Field(i))
 				if r != nil {
-					to.Field(i).Set(*r)
+					FinalSet(*r, to.Field(i))
+					//to.Field(i).Set(*r)
 				}
 			}
 		}
 	}
+}
+
+func FinalSet(from, to reflect.Value) {
+	fv := FinalValue(from)
+	tv := FinalValue(to)
+	tv.Set(fv)
 }
 
 func convertStructToStruct(from, to reflect.Value) {
@@ -144,9 +151,10 @@ func convertStructToStruct(from, to reflect.Value) {
 	ft := FinalType(from)
 	tt := FinalType(to)
 	if ft == tt {
-		fv := FinalValue(from)
-		tv := FinalValue(to)
-		tv.Set(fv)
+		FinalSet(from, to)
+		//fv := FinalValue(from)
+		//tv := FinalValue(to)
+		//tv.Set(fv)
 		return
 	}
 

@@ -493,11 +493,21 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 				if excludesKeys != nil && len(excludesKeys) > 0 {
 					// 是否排除
 					excluded := false
+					checkStr := strings.Join(keys[0:tpos+1], ".")
 					for _, ek := range excludesKeys {
+						//fmt.Println(".  >", ek, checkStr)
+						//if checkStr == ek {
+						//	excluded = true
+						//}
+						//if !excluded && strings.HasPrefix(checkStr, ek+".") {
+						//	excluded = true
+						//}
+						// if set "requestHeaders" mean requestHeaders is excluded, but children is not excluded
+						// if set "requestHeaders." mean requestHeaders is not excluded, but children is excluded
 						if strings.HasSuffix(ek, ".") {
-							excluded = strings.HasPrefix(strings.Join(keys[0:tpos+1], "."), ek)
+							excluded = strings.HasPrefix(checkStr, ek)
 						} else {
-							excluded = strings.Join(keys[0:tpos+1], ".") == ek
+							excluded = checkStr == ek
 						}
 						//for j := tpos - 1; j >= 0; j-- {
 						//	if strings.Index(keys[j], ek) != -1 {
@@ -509,7 +519,7 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 							break
 						}
 					}
-					//fmt.Println(">", strings.Join(keys[0:tpos+1], "."), excluded)
+					fmt.Println(">", checkStr, excluded)
 					if !excluded {
 						keyStr := keys[tpos]
 						hasLower := false
