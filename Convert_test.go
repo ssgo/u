@@ -226,20 +226,38 @@ func TestConvertStructToStruct(t *testing.T) {
 	type User1 struct {
 		My_Name string
 		Age     int
+		F1      func(a int, b string, c bool) (d int, e string, f bool)
+		F2      func(a ...interface{}) interface{}
 	}
+
 	type User2 struct {
 		MYNAME_ string
 		Level   int
 		Class   int
+		F1      func(a int, b int, c bool) (d int, e string, f bool)
+		F2      func(a int, b int, c bool) (d int, e string, f bool)
 	}
 
-	from := User1{My_Name: "Tom", Age: 23}
+	from := User1{My_Name: "Tom", Age: 23, F1: func(a int, b string, c bool) (d int, e string, f bool) {
+		return a + 1, b + "1", !c
+	}, F2: func(a ...interface{}) interface{} {
+		return []interface{}{u.Int(a[0]) + 1, u.String(a[1]) + "1", !u.Bool(a[2])}
+	}}
 	to := User2{MYNAME_: "Jeff", Level: -1}
 
 	u.Convert(from, &to)
-	fmt.Println(to)
 	if to.MYNAME_ != "Tom" {
 		t.Error("test convert Struct to Struct", to)
+	}
+
+	a, b, c := to.F1(1, 1, false)
+	if a != 2 || b != "11" || c != true {
+		t.Error("test convert Func to Func", a, b, c)
+	}
+
+	a, b, c = to.F1(1, 1, false)
+	if a != 2 || b != "11" || c != true {
+		t.Error("test convert Func to Func with variadic", a, b, c)
 	}
 }
 
@@ -248,10 +266,10 @@ type TestStructA struct {
 	Field2 string
 }
 
-func (item *TestStructA) method1(){
+func (item *TestStructA) method1() {
 }
 
-func (item *TestStructA) Method2(){
+func (item *TestStructA) Method2() {
 }
 
 type TestStructB struct {
@@ -260,10 +278,10 @@ type TestStructB struct {
 	Field4 string
 }
 
-func (item *TestStructB) method3(){
+func (item *TestStructB) method3() {
 }
 
-func (item *TestStructB) Method4(){
+func (item *TestStructB) Method4() {
 }
 
 func TestFlatStruct(t *testing.T) {

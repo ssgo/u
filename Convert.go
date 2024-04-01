@@ -344,6 +344,66 @@ func convert(from, to interface{}) *reflect.Value {
 		case reflect.Struct:
 			convertStructToMap(fromValue, toValue)
 		}
+	case reflect.Func:
+		if fromType.Kind() == reflect.Func {
+			toValue.Set(reflect.MakeFunc(toType, func(goArgs []reflect.Value) []reflect.Value {
+				ins := make([]reflect.Value, 0)
+				j := 0
+				for i := 0; i < len(goArgs); i++ {
+					if j >= fromType.NumIn() {
+						break
+					}
+					var jV interface{}
+					if fromType.IsVariadic() && j == fromType.NumIn()-1 && fromType.In(j).Kind() == reflect.Slice {
+						jV = reflect.New(fromType.In(j).Elem()).Interface()
+					} else {
+						jV = reflect.New(fromType.In(j)).Interface()
+						j++
+					}
+					convert(goArgs[i].Interface(), jV)
+					ins = append(ins, reflect.ValueOf(jV).Elem())
+				}
+				out := fromValue.Call(ins)
+				outs := make([]reflect.Value, 0)
+				j = 0
+				for i := 0; i < toType.NumOut(); i++ {
+					iV := reflect.New(toType.Out(i)).Interface()
+					var jV interface{}
+					if toType.NumOut() > len(out) && j == len(out)-1 && out[j].Kind() == reflect.Slice {
+						if out[j].Len() > i-j {
+							jV = out[j].Index(i - j).Interface()
+							convert(jV, iV)
+						}
+					} else {
+						jV = out[j].Interface()
+						convert(jV, iV)
+						j++
+					}
+					outs = append(outs, reflect.ValueOf(iV).Elem())
+				}
+				return outs
+			}))
+
+			//jsFunc := args[i]
+			//funcType := needArgType
+			//argValue = reflect.MakeFunc(funcType, func(goArgs []reflect.Value) []reflect.Value {
+			//	ins := make([]quickjs.Value, 0)
+			//	for _, goArg := range goArgs {
+			//		ins = append(ins, MakeJsValue(ctx, goArg.Interface(), false))
+			//	}
+			//	outs := make([]reflect.Value, 0)
+			//	for j := 0; j < funcType.NumOut(); j++ {
+			//		outs = append(outs, reflect.New(funcType.Out(j)).Elem())
+			//	}
+			//	jsResult := jsCtx.Invoke(jsFunc, jsCtx.Null(), ins...)
+			//	if !jsResult.IsUndefined() && len(outs) > 0 {
+			//		out0P := outs[0].Interface()
+			//		u.Convert(MakeFromJsValue(jsResult), out0P)
+			//		outs[0] = reflect.ValueOf(out0P).Elem()
+			//	}
+			//	return outs
+			//})
+		}
 	default:
 		//fmt.Println(" !!!!!!2", fromType.Kind(), toType.Kind(), toType.Elem().Kind())
 	}

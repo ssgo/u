@@ -21,6 +21,7 @@ type MemFile struct {
 	ModTime    time.Time
 	IsDir      bool
 	Compressed bool
+	Size       int64
 	Data       []byte
 }
 
@@ -30,6 +31,7 @@ type MemFileB64 struct {
 	IsDir      bool
 	DataB64    string
 	Compressed bool
+	Size       int64
 	Children   []MemFileB64
 }
 
@@ -112,6 +114,7 @@ func loadFileToMemory(filename string, compress bool) {
 				Name:    filename,
 				ModTime: info.ModTime(),
 				IsDir:   true,
+				Size:    info.Size(),
 				Data:    nil,
 			})
 			if files, err := os.ReadDir(filename); err == nil {
@@ -132,6 +135,7 @@ func loadFileToMemory(filename string, compress bool) {
 					Name:       filename,
 					ModTime:    info.ModTime(),
 					IsDir:      false,
+					Size:       info.Size(),
 					Data:       data,
 					Compressed: compressed,
 				})
@@ -182,6 +186,7 @@ func LoadFileToB64(filename string) *MemFileB64 {
 				Name:     filename,
 				ModTime:  info.ModTime(),
 				IsDir:    true,
+				Size:     info.Size(),
 				Children: make([]MemFileB64, 0),
 			}
 			if files, err := os.ReadDir(filename); err == nil {
@@ -203,6 +208,7 @@ func LoadFileToB64(filename string) *MemFileB64 {
 					Name:       filename,
 					ModTime:    info.ModTime(),
 					IsDir:      false,
+					Size:       info.Size(),
 					DataB64:    Base64(data),
 					Compressed: compressed,
 				}
@@ -221,6 +227,7 @@ func LoadFilesToMemoryFromB64(b64File *MemFileB64) {
 		Name:    b64File.Name,
 		ModTime: b64File.ModTime,
 		IsDir:   b64File.IsDir,
+		Size:    b64File.Size,
 		Data:    data,
 	}
 	AddFileToMemory(memFile)
@@ -237,6 +244,7 @@ func LoadFilesToMemoryFromB64KeepGzip(b64File *MemFileB64) {
 		Name:    b64File.Name,
 		ModTime: b64File.ModTime,
 		IsDir:   b64File.IsDir,
+		Size:    b64File.Size,
 		Data:    data,
 	}
 	AddFileToMemory(memFile)
@@ -428,6 +436,32 @@ func FileExists(filename string) bool {
 	}
 	fi, err := os.Stat(filename)
 	return err == nil && fi != nil
+}
+
+func GetFileInfo(filename string) *FileInfo {
+	if mf := ReadFileFromMemory(filename); mf != nil {
+		return &FileInfo{
+			Name:     mf.Name,
+			FullName: mf.absName,
+			IsDir:    mf.IsDir,
+			Size:     mf.Size,
+			ModTime:  mf.ModTime,
+		}
+	}
+	if fi, err := os.Stat(filename); err == nil {
+		fullName := filename
+		if !filepath.IsAbs(filename) {
+			fullName, _ = filepath.Abs(filename)
+		}
+		return &FileInfo{
+			Name:     filename,
+			FullName: fullName,
+			IsDir:    fi.IsDir(),
+			Size:     fi.Size(),
+			ModTime:  fi.ModTime(),
+		}
+	}
+	return nil
 }
 
 func CheckPath(filename string) {
