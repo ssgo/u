@@ -54,7 +54,7 @@ func (mf *MemFile) GetData() []byte {
 	return mf.Data
 }
 
-func GetAbsName(filename string) string {
+func GetAbsFilename(filename string) string {
 	if !filepath.IsAbs(filename) {
 		if absName, err := filepath.Abs(filename); err == nil {
 			filename = absName
@@ -64,14 +64,14 @@ func GetAbsName(filename string) string {
 }
 
 func ReadFileFromMemory(name string) *MemFile {
-	name = GetAbsName(name)
+	name = GetAbsFilename(name)
 	memFilesLock.RLock()
 	defer memFilesLock.RUnlock()
 	return memFiles[name]
 }
 
 func ReadDirFromMemory(name string) []MemFile {
-	name = GetAbsName(name)
+	name = GetAbsFilename(name)
 	var dirFiles []MemFile
 	memFilesLock.RLock()
 	mfList := memFilesByDir[name]
@@ -86,7 +86,7 @@ func ReadDirFromMemory(name string) []MemFile {
 }
 
 func AddFileToMemory(memFile MemFile) {
-	memFile.Name = GetAbsName(memFile.Name)
+	memFile.Name = GetAbsFilename(memFile.Name)
 	dirName := filepath.Dir(memFile.Name)
 	memFilesLock.Lock()
 	memFiles[memFile.Name] = &memFile
@@ -405,7 +405,7 @@ func WriteFile(filename string, content string) error {
 }
 
 func WriteFileBytes(filename string, content []byte) error {
-	absFilename := GetAbsName(filename)
+	absFilename := GetAbsFilename(filename)
 	memFilesLock.RLock()
 	mf := memFiles[absFilename]
 	memFilesLock.RUnlock()
@@ -621,7 +621,7 @@ func save(filename string, isYaml bool, data interface{}, indent bool) error {
 		return err
 	}
 
-	absFilename := GetAbsName(filename)
+	absFilename := GetAbsFilename(filename)
 	memFilesLock.RLock()
 	mf := memFiles[absFilename]
 	memFilesLock.RUnlock()
