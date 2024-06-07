@@ -416,7 +416,7 @@ func WriteFileBytes(filename string, content []byte) error {
 	}
 
 	CheckPath(filename)
-	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	fd, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -471,7 +471,7 @@ func CheckPath(filename string) {
 	}
 	path := filename[0:pos]
 	if _, err := os.Stat(path); err != nil {
-		_ = os.MkdirAll(path, 0700)
+		_ = os.MkdirAll(path, 0755)
 	}
 }
 
@@ -546,7 +546,7 @@ func load(filename string, isYaml bool, to interface{}) error {
 }
 
 func CopyToFile(from io.Reader, to string) error {
-	if fp, err := os.OpenFile(to, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600); err == nil {
+	if fp, err := os.OpenFile(to, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644); err == nil {
 		defer fp.Close()
 		io.Copy(fp, from)
 		return nil
@@ -556,17 +556,35 @@ func CopyToFile(from io.Reader, to string) error {
 }
 
 func CopyFile(from, to string) error {
-	if writer, err := os.OpenFile(to, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600); err == nil {
-		defer writer.Close()
-		if reader, err := os.OpenFile(from, os.O_RDONLY, 0600); err == nil {
-			defer reader.Close()
-			_, err = io.Copy(writer, reader)
-			return err
+	fromStat, _ := os.Stat(from)
+	if fromStat.IsDir() {
+		// copy dir
+		for _, f := range ReadDirN(from) {
+			err := CopyFile(filepath.Join(from, f.Name), filepath.Join(to, f.Name))
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	} else {
+		// copy file
+		toStat, err := os.Stat(to)
+		if err == nil && toStat.IsDir() {
+			to = filepath.Join(to, filepath.Base(from))
+		}
+		CheckPath(to)
+		if writer, err := os.OpenFile(to, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644); err == nil {
+			defer writer.Close()
+			if reader, err := os.OpenFile(from, os.O_RDONLY, 0644); err == nil {
+				defer reader.Close()
+				_, err = io.Copy(writer, reader)
+				return err
+			} else {
+				return err
+			}
 		} else {
 			return err
 		}
-	} else {
-		return err
 	}
 }
 
@@ -642,7 +660,7 @@ func save(filename string, isYaml bool, data interface{}, indent bool) error {
 	lock.Lock()
 	defer lock.Unlock()
 
-	fp, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	fp, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err == nil {
 		_, err = fp.Write(buf)
 		_ = fp.Close()
