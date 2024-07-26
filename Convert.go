@@ -321,6 +321,8 @@ func convert(from, to interface{}) *reflect.Value {
 			toValue.SetBytes(Bytes(fromValue.Interface()))
 		} else if fromType.Kind() == reflect.Slice {
 			return convertSliceToSlice(fromValue, toValue)
+		} else if fromType.Kind() == reflect.String {
+			return convertSliceToSlice(reflect.ValueOf(UnJsonArr(fromValue.String())), toValue)
 		} else {
 			tmpSlice := reflect.MakeSlice(reflect.SliceOf(fromType), 1, 1)
 			tmpSlice.Index(0).Set(fromValue)
@@ -332,6 +334,8 @@ func convert(from, to interface{}) *reflect.Value {
 			convertMapToStruct(fromValue, toValue)
 		case reflect.Struct:
 			convertStructToStruct(fromValue, toValue)
+		case reflect.String:
+			convertMapToStruct(reflect.ValueOf(UnJsonMap(fromValue.String())), toValue)
 		}
 	case reflect.Map:
 		if toValue.IsNil() {
@@ -343,6 +347,8 @@ func convert(from, to interface{}) *reflect.Value {
 			convertMapToMap(fromValue, toValue)
 		case reflect.Struct:
 			convertStructToMap(fromValue, toValue)
+		case reflect.String:
+			convertMapToMap(reflect.ValueOf(UnJsonMap(fromValue.String())), toValue)
 		}
 	case reflect.Func:
 		if fromType.Kind() == reflect.Func {
@@ -369,17 +375,27 @@ func convert(from, to interface{}) *reflect.Value {
 				for i := 0; i < toType.NumOut(); i++ {
 					iV := reflect.New(toType.Out(i)).Interface()
 					var jV interface{}
-					if toType.NumOut() > len(out) && j == len(out)-1 && out[j].Kind() == reflect.Slice {
-						if out[j].Len() > i-j {
-							jV = out[j].Index(i - j).Interface()
-							convert(jV, iV)
+					if toType.NumOut() > len(out) {
+						if j == len(out)-1 && out[j].Kind() == reflect.Slice {
+							if out[j].Len() > i-j {
+								jV = out[j].Index(i - j).Interface()
+								convert(jV, iV)
+							}
+							outs = append(outs, reflect.ValueOf(iV).Elem())
+						} else {
+							// not match, use default value
+							if toType.Kind() == reflect.Ptr {
+								outs = append(outs, reflect.ValueOf(nil))
+							} else {
+								outs = append(outs, reflect.New(toType.Out(i)).Elem())
+							}
 						}
 					} else {
 						jV = out[j].Interface()
 						convert(jV, iV)
 						j++
+						outs = append(outs, reflect.ValueOf(iV).Elem())
 					}
-					outs = append(outs, reflect.ValueOf(iV).Elem())
 				}
 				return outs
 			}))

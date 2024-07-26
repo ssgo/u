@@ -378,6 +378,14 @@ func GetUpperName(s string) string {
 	return string(buf)
 }
 
+func StringFromValue(v reflect.Value) string {
+	if v.CanInterface() {
+		return String(v.Interface())
+	} else {
+		return v.String()
+	}
+}
+
 func MakeExcludeUpperKeys(data interface{}, prefix string) []string {
 	oriPrefix := prefix
 	if prefix != "" {
@@ -400,7 +408,7 @@ func MakeExcludeUpperKeys(data interface{}, prefix string) []string {
 	switch inType.Kind() {
 	case reflect.Map:
 		for _, k := range inValue.MapKeys() {
-			r := MakeExcludeUpperKeys(inValue.MapIndex(k), prefix+String(k.Interface()))
+			r := MakeExcludeUpperKeys(inValue.MapIndex(k), prefix+StringFromValue(k))
 			if len(r) > 0 {
 				outs = append(outs, r...)
 			}
@@ -743,7 +751,7 @@ func makeJsonType(inValue reflect.Value) *reflect.Value {
 				for _, k := range inValue.MapKeys() {
 					v1 := inValue.MapIndex(k)
 					v2 := makeJsonType(v1)
-					k2 := reflect.ValueOf(fmt.Sprint(k.Interface()))
+					k2 := reflect.ValueOf(StringFromValue(k))
 					if v2 != nil {
 						newMap.SetMapIndex(k2, *v2)
 					} else {
