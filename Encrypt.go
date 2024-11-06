@@ -144,8 +144,12 @@ func DecryptAes(crypted string, key []byte, iv []byte) (out string) {
 	if cryptedBytes, err := base64Encoding.DecodeString(crypted); err != nil {
 		return crypted
 	} else {
-		buf, _ := DecryptAesBytes(cryptedBytes, key, iv)
-		return String(buf)
+		buf, err := DecryptAesBytes(cryptedBytes, key, iv)
+		if err == nil && len(buf) > 0 {
+			return String(buf)
+		} else {
+			return crypted
+		}
 	}
 }
 
@@ -369,33 +373,51 @@ func (_this *Aes) DecryptBytes(data []byte) (out []byte, outErr error) {
 }
 
 func (_this *Aes) EncryptBytesToHex(data []byte) string {
-	buf, _ := _this.EncryptBytes(data)
-	return hex.EncodeToString(buf)
+	if buf, err := _this.EncryptBytes(data); err == nil && len(buf) > 0 {
+		return hex.EncodeToString(buf)
+	} else {
+		return string(data)
+	}
 }
 
 func (_this *Aes) EncryptBytesToBase64(data []byte) string {
-	buf, _ := _this.EncryptBytes(data)
-	return base64.StdEncoding.EncodeToString(buf)
+	if buf, err := _this.EncryptBytes(data); err == nil && len(buf) > 0 {
+		return base64.StdEncoding.EncodeToString(buf)
+	} else {
+		return string(data)
+	}
 }
 
 func (_this *Aes) EncryptBytesToUrlBase64(data []byte) string {
-	buf, _ := _this.EncryptBytes(data)
-	return base64.URLEncoding.EncodeToString(buf)
+	if buf, err := _this.EncryptBytes(data); err == nil && len(buf) > 0 {
+		return base64.URLEncoding.EncodeToString(buf)
+	} else {
+		return string(data)
+	}
 }
 
 func (_this *Aes) EncryptStringToHex(data string) string {
-	buf, _ := _this.EncryptBytes([]byte(data))
-	return hex.EncodeToString(buf)
+	if buf, err := _this.EncryptBytes([]byte(data)); err == nil && len(buf) > 0 {
+		return hex.EncodeToString(buf)
+	} else {
+		return data
+	}
 }
 
 func (_this *Aes) EncryptStringToBase64(data string) string {
-	buf, _ := _this.EncryptBytes([]byte(data))
-	return base64.StdEncoding.EncodeToString(buf)
+	if buf, err := _this.EncryptBytes([]byte(data)); err == nil && len(buf) > 0 {
+		return base64.StdEncoding.EncodeToString(buf)
+	} else {
+		return data
+	}
 }
 
 func (_this *Aes) EncryptStringToUrlBase64(data string) string {
-	buf, _ := _this.EncryptBytes([]byte(data))
-	return base64.URLEncoding.EncodeToString(buf)
+	if buf, err := _this.EncryptBytes([]byte(data)); err == nil && len(buf) > 0 {
+		return base64.URLEncoding.EncodeToString(buf)
+	} else {
+		return data
+	}
 }
 
 func (_this *Aes) DecryptHexToBytes(data string) []byte {
@@ -403,8 +425,11 @@ func (_this *Aes) DecryptHexToBytes(data string) []byte {
 	if err != nil {
 		return []byte(data)
 	}
-	buf1, _ := _this.DecryptBytes(buf)
-	return buf1
+	if buf1, err1 := _this.DecryptBytes(buf); err1 == nil && len(buf1) > 0 {
+		return buf1
+	} else {
+		return []byte(data)
+	}
 }
 
 func (_this *Aes) DecryptBase64ToBytes(data string) []byte {
@@ -412,8 +437,11 @@ func (_this *Aes) DecryptBase64ToBytes(data string) []byte {
 	if err != nil {
 		return []byte(data)
 	}
-	buf1, _ := _this.DecryptBytes(buf)
-	return buf1
+	if buf1, err1 := _this.DecryptBytes(buf); err1 == nil && len(buf1) > 0 {
+		return buf1
+	} else {
+		return []byte(data)
+	}
 }
 
 func (_this *Aes) DecryptUrlBase64ToBytes(data string) []byte {
@@ -421,8 +449,11 @@ func (_this *Aes) DecryptUrlBase64ToBytes(data string) []byte {
 	if err != nil {
 		return []byte(data)
 	}
-	buf1, _ := _this.DecryptBytes(buf)
-	return buf1
+	if buf1, err1 := _this.DecryptBytes(buf); err1 == nil && len(buf1) > 0 {
+		return buf1
+	} else {
+		return []byte(data)
+	}
 }
 
 func (_this *Aes) DecryptHexToString(data string) string {
@@ -430,8 +461,11 @@ func (_this *Aes) DecryptHexToString(data string) string {
 	if err != nil {
 		return data
 	}
-	buf1, _ := _this.DecryptBytes(buf)
-	return string(buf1)
+	if buf1, err1 := _this.DecryptBytes(buf); err1 == nil && len(buf1) > 0 {
+		return string(buf1)
+	} else {
+		return data
+	}
 }
 
 func (_this *Aes) DecryptBase64ToString(data string) string {
@@ -439,8 +473,11 @@ func (_this *Aes) DecryptBase64ToString(data string) string {
 	if err != nil {
 		return data
 	}
-	buf1, _ := _this.DecryptBytes(buf)
-	return string(buf1)
+	if buf1, err1 := _this.DecryptBytes(buf); err1 == nil && len(buf1) > 0 {
+		return string(buf1)
+	} else {
+		return data
+	}
 }
 
 func (_this *Aes) DecryptUrlBase64ToString(data string) string {
@@ -448,8 +485,11 @@ func (_this *Aes) DecryptUrlBase64ToString(data string) string {
 	if err != nil {
 		return data
 	}
-	buf1, _ := _this.DecryptBytes(buf)
-	return string(buf1)
+	if buf1, err1 := _this.DecryptBytes(buf); err1 == nil && len(buf1) > 0 {
+		return string(buf1)
+	} else {
+		return data
+	}
 }
 
 func GenECDSA521Key() (privateKey string, publicKey string, err error) {
@@ -561,7 +601,7 @@ func VerifyECDSA(content []byte, signature string, pubKey *ecdsa.PublicKey) bool
 	r := new(big.Int)
 	s := new(big.Int)
 	byteLen := bytes[0]
-	r.SetBytes(bytes[1:byteLen+1])
+	r.SetBytes(bytes[1 : byteLen+1])
 	s.SetBytes(bytes[byteLen+1:])
 	//fmt.Println(len(bytes[0:byteLen]), len(bytes[byteLen:]), "/", len(bytes))
 	return ecdsa.Verify(pubKey, Sha256(content), r, s)
