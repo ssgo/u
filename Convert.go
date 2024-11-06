@@ -1,8 +1,11 @@
 package u
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 func FixPtr(value interface{}) interface{} {
@@ -301,6 +304,18 @@ func convert(from, to interface{}) *reflect.Value {
 	fromType := FinalType(fromValue)
 	toType := toValue.Type()
 	var newValue *reflect.Value = nil
+
+	jsonUM, jsonUMOk := toValue.Addr().Interface().(json.Unmarshaler)
+	yamlUM, yamlUMOk := toValue.Addr().Interface().(yaml.Unmarshaler)
+	if jsonUMOk {
+		jsonUM.UnmarshalJSON(Bytes(fromValue.Interface()))
+		return nil
+	} else if yamlUMOk {
+		yamlUM.UnmarshalYAML(&yaml.Node{
+			Value: String(fromValue.Interface()),
+		})
+		return nil
+	}
 
 	switch toType.Kind() {
 	case reflect.Bool:
