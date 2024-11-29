@@ -208,8 +208,11 @@ func convertMapToMap(from, to reflect.Value) {
 		k := keys[i]
 		v := from.MapIndex(k)
 		keyItem := reflect.New(toType.Key()).Elem()
-		valueItem := reflect.New(toType.Elem()).Elem()
 		convert(k, keyItem)
+		valueItem := to.MapIndex(keyItem)
+		if !valueItem.IsValid() {
+			valueItem = reflect.New(toType.Elem()).Elem()
+		}
 		newItem := convert(v, valueItem)
 		if newItem != nil {
 			to.SetMapIndex(keyItem, *newItem)
@@ -228,8 +231,12 @@ func convertStructToMap(from, to reflect.Value) {
 			continue
 		}
 		keyItem := reflect.New(toType.Key()).Elem()
-		valueItem := reflect.New(toType.Elem()).Elem()
+		// valueItem := reflect.New(toType.Elem()).Elem()
 		convert(k, keyItem)
+		valueItem := to.MapIndex(keyItem)
+		if !valueItem.IsValid() {
+			valueItem = reflect.New(toType.Elem()).Elem()
+		}
 		if keyItem.Kind() == reflect.String {
 			// Struct转Map时自动将首字母改为小写
 			keyStr := keyItem.String()
@@ -302,35 +309,85 @@ func convert(from, to interface{}) *reflect.Value {
 	}
 
 	fromType := FinalType(fromValue)
-	toType := toValue.Type()
 	var newValue *reflect.Value = nil
 
-	jsonUM, jsonUMOk := toValue.Addr().Interface().(json.Unmarshaler)
-	yamlUM, yamlUMOk := toValue.Addr().Interface().(yaml.Unmarshaler)
-	if jsonUMOk {
-		jsonUM.UnmarshalJSON(Bytes(fromValue.Interface()))
-		return nil
-	} else if yamlUMOk {
-		yamlUM.UnmarshalYAML(&yaml.Node{
-			Value: String(fromValue.Interface()),
-		})
-		return nil
+	if toValue.CanAddr() {
+		jsonUM, jsonUMOk := toValue.Addr().Interface().(json.Unmarshaler)
+		yamlUM, yamlUMOk := toValue.Addr().Interface().(yaml.Unmarshaler)
+		if jsonUMOk {
+			jsonUM.UnmarshalJSON(Bytes(fromValue.Interface()))
+			return nil
+		} else if yamlUMOk {
+			yamlUM.UnmarshalYAML(&yaml.Node{
+				Value: String(fromValue.Interface()),
+			})
+			return nil
+		}
+	}
+
+	toValueP := toValue
+	toType := toValue.Type()
+	if toValue.IsValid() && toValue.Type().Kind() == reflect.Interface {
+		if toValue.Elem().IsValid() {
+			toValue = toValue.Elem()
+			toType = toValue.Type()
+		}
 	}
 
 	switch toType.Kind() {
 	case reflect.Bool:
-		toValue.SetBool(Bool(fromValue.Interface()))
+		if toValue != toValueP {
+			if toValueP.CanAddr() {
+				toValueP.Set(fromValue)
+			} else {
+				newValue = &fromValue
+			}
+		} else {
+			toValue.SetBool(Bool(fromValue.Interface()))
+		}
 	case reflect.Interface:
-		toValue.Set(reflect.ValueOf(fromValue.Interface()))
+		toValueP.Set(reflect.ValueOf(fromValue.Interface()))
 	case reflect.String:
-		toValue.SetString(String(fromValue.Interface()))
-		newValue = &toValue
+		if toValue != toValueP {
+			if toValueP.CanAddr() {
+				toValueP.Set(fromValue)
+			} else {
+				newValue = &fromValue
+			}
+		} else {
+			toValue.SetString(String(fromValue.Interface()))
+			newValue = &toValue
+		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		toValue.SetInt(Int64(fromValue.Interface()))
+		if toValue != toValueP {
+			if toValueP.CanAddr() {
+				toValueP.Set(fromValue)
+			} else {
+				newValue = &fromValue
+			}
+		} else {
+			toValue.SetInt(Int64(fromValue.Interface()))
+		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		toValue.SetUint(Uint64(fromValue.Interface()))
+		if toValue != toValueP {
+			if toValueP.CanAddr() {
+				toValueP.Set(fromValue)
+			} else {
+				newValue = &fromValue
+			}
+		} else {
+			toValue.SetUint(Uint64(fromValue.Interface()))
+		}
 	case reflect.Float32, reflect.Float64:
-		toValue.SetFloat(Float64(fromValue.Interface()))
+		if toValue != toValueP {
+			if toValueP.CanAddr() {
+				toValueP.Set(fromValue)
+			} else {
+				newValue = &fromValue
+			}
+		} else {
+			toValue.SetFloat(Float64(fromValue.Interface()))
+		}
 	case reflect.Slice:
 		if toType.Elem().Kind() == reflect.Uint8 {
 			toValue.SetBytes(Bytes(fromValue.Interface()))
