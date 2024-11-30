@@ -355,8 +355,12 @@ func convert(from, to interface{}) *reflect.Value {
 				newValue = &fromValue
 			}
 		} else {
-			toValue.SetString(String(fromValue.Interface()))
-			newValue = &toValue
+			if toValueP.CanAddr() {
+				toValue.SetString(String(fromValue.Interface()))
+				// newValue = &toValue
+			} else {
+				newValue = &fromValue
+			}
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if toValue != toValueP {
