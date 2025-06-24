@@ -52,6 +52,7 @@ func TestParseTime(t *testing.T) {
 		// 7. 边界和错误情况
 		{input: "", expected: time.Now(), name: "空字符串"},
 		{input: "invalid-time", expected: time.Now(), name: "无效格式"},
+		{input: "Mon Jan 01 2024 00:00:00 GMT+0800 (中国标准时间)", expected: time.UnixMilli(1704038400000), name: "JS日期解析"},
 	}
 
 	for _, tc := range tests {

@@ -139,7 +139,8 @@ func ParseTime(v interface{}) time.Time {
 	}
 
 	if len(str) > 24 && str[3] == ' ' {
-		// Javascript：Mon Jun 23 2025 20:56:30 GMT+0800
+		str = strings.SplitN(str, " (", 2)[0] // JS 的字符串中会出现多余内容，需要删除
+		// Javascript：Mon Jan 01 2024 00:00:00 GMT+0800 (中国标准时间)
 		tzStr := "GMT"
 		if strings.Contains(str, "MST") {
 			// tzStr = "MST"
@@ -148,6 +149,7 @@ func ParseTime(v interface{}) time.Time {
 			// tzStr = "CST"
 			str = strings.Replace(str, "CST", "+0800", 1)
 		}
+		// 						 Mon Jan 01 2024 00:00:00 GMT+0800 (中国标准时间)
 		if tm, err = time.Parse("Mon Jan 02 2006 15:04:05 "+tzStr+"-0700", str); err == nil {
 			return tm.In(time.Local)
 		}
