@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 func ParseInt(s string) int64 {
@@ -612,11 +613,27 @@ func SplitTrim(s, sep string) []string {
 	return ss
 }
 
+func SplitTrimN(s, sep string, n int) []string {
+	ss := strings.SplitN(s, sep, n)
+	for i, s1 := range ss {
+		ss[i] = strings.TrimSpace(s1)
+	}
+	return ss
+}
+
 func SplitWithoutNone(s, sep string) []string {
 	if s == "" {
 		return []string{}
 	} else {
 		return SplitTrim(s, sep)
+	}
+}
+
+func SplitWithoutNoneN(s, sep string, n int) []string {
+	if s == "" {
+		return []string{}
+	} else {
+		return SplitTrimN(s, sep, n)
 	}
 }
 

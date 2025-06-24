@@ -104,6 +104,44 @@ func DecodeInt(buf []byte) uint64 {
 	return defaultIntEncoder.DecodeInt(buf)
 }
 
+func ExchangeInt(buf []byte) []byte {
+	size := len(buf)
+	buf2 := make([]byte, size)
+	buf2_i := 0
+	buf2_ai := 0
+	buf2_ri := size - 1
+	for i := 0; i < size; i++ {
+		if i%2 == 0 {
+			// 从后往前取
+			buf2[buf2_i] = buf[buf2_ri]
+			buf2_i++
+			buf2_ri--
+		} else {
+			// 从前往后取
+			buf2[buf2_i] = buf[buf2_ai]
+			buf2_i++
+			buf2_ai++
+		}
+	}
+	return buf2
+}
+
+func HashInt(buf []byte) []byte {
+	prevP := 0
+	for i, c := range []byte(buf) {
+		p := strings.IndexByte(defaultIntEncoder.digits, c)
+		if p < 0 {
+			p = 0
+		}
+		if i > 0 {
+			p = (prevP + p) % 62
+			buf[i] = defaultIntEncoder.digits[p]
+		}
+		prevP = p
+	}
+	return buf
+}
+
 func EncryptAes(origData string, key []byte, iv []byte) (out string) {
 	buf, _ := EncryptAesBytes([]byte(origData), key, iv)
 	return base64.URLEncoding.EncodeToString(buf)

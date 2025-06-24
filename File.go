@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"gopkg.in/yaml.v3"
 	"io"
 	"os"
 	"os/exec"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 type MemFile struct {
@@ -310,14 +311,15 @@ func ReadDir(filename string) ([]FileInfo, error) {
 	files, err := os.ReadDir(filename)
 	if err == nil {
 		for _, f := range files {
-			info, _ := f.Info()
-			out = append(out, FileInfo{
-				Name:     f.Name(),
-				FullName: filepath.Join(filename, f.Name()),
-				IsDir:    f.IsDir(),
-				Size:     info.Size(),
-				ModTime:  info.ModTime(),
-			})
+			if info, _ := f.Info(); info != nil {
+				out = append(out, FileInfo{
+					Name:     f.Name(),
+					FullName: filepath.Join(filename, f.Name()),
+					IsDir:    info.IsDir(),
+					Size:     info.Size(),
+					ModTime:  info.ModTime(),
+				})
+			}
 		}
 	}
 	return out, err
