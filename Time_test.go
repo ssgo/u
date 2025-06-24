@@ -182,7 +182,7 @@ func TestFormatTime(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := u.FormatTime(baseTime, tt.layout)
+			got := u.FormatTime(tt.layout, baseTime)
 			if got != tt.want {
 				t.Errorf("FormatTime() = %v, want %v", got, tt.want)
 			}
