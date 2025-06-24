@@ -96,6 +96,13 @@ func ParseTime(v interface{}) time.Time {
 		}
 	}
 	// 2006-01-02 15:04:05、2006-01-02T15:04:05、2006/01/02 15:04:05、2006/01/02T15:04:05
+	if len(str) >= 20 && (str[4] == '-' || str[4] == '/') && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
+		str = strings.TrimRight(str, "Z")
+		if tm, err = time.ParseInLocation(fmt.Sprintf("2006%c01%c02%c15:04:05.999", str[4], str[4], str[10]), str, time.Local); err == nil {
+			return tm
+		}
+	}
+	// 2006-01-02 15:04:05、2006-01-02T15:04:05、2006/01/02 15:04:05、2006/01/02T15:04:05
 	if len(str) >= 19 && (str[4] == '-' || str[4] == '/') && (str[10] == ' ' || str[10] == 'T') {
 		if tm, err = time.ParseInLocation(fmt.Sprintf("2006%c01%c02%c15:04:05", str[4], str[4], str[10]), str[0:19], time.Local); err == nil {
 			return tm

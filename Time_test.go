@@ -29,6 +29,8 @@ func TestParseTime(t *testing.T) {
 
 		// 3. RFC3339格式
 		{input: "2025-06-23T15:30:45Z", expected: refTime.UTC().Truncate(time.Second), name: "RFC3339 UTC"},
+		{input: "2025-06-23T15:30:45.123Z", expected: refTime.UTC().Truncate(time.Millisecond), name: "RFC3339 MS UTC"},
+		{input: "2025-06-23T15:30:45.1Z", expected: refTime.UTC().Truncate(time.Second).Add(100 * time.Millisecond), name: "RFC3339 MS/100 UTC"},
 		{input: "2025-06-23T15:30:45+08:00", expected: refTime.Truncate(time.Second), name: "RFC3339 带时区"},
 		{input: "2025-06-23T15:30:45.123456789+08:00", expected: refTime, name: "RFC3339Nano"},
 
