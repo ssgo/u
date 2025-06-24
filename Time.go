@@ -234,11 +234,11 @@ func FormatTime(layout string, timeValue interface{}) string {
 	return tm.Format(layout)
 }
 
-func AddTime(timeValue interface{}, s string) time.Time {
+func AddTime(timeStr string, timeValue interface{}) time.Time {
 	tm := ParseTime(timeValue)
 
 	// 处理空字符串
-	if s == "" {
+	if timeStr == "" {
 		return tm
 	}
 
@@ -248,19 +248,19 @@ func AddTime(timeValue interface{}, s string) time.Time {
 	days := 0
 	duration := time.Duration(0)
 
-	for i < len(s) {
+	for i < len(timeStr) {
 		// 处理每部分的符号（默认正数）
 		sign := 1
-		if s[i] == '+' {
+		if timeStr[i] == '+' {
 			i++
-		} else if s[i] == '-' {
+		} else if timeStr[i] == '-' {
 			sign = -1
 			i++
 		}
 
 		// 解析数字部分
 		j := i
-		for j < len(s) && s[j] >= '0' && s[j] <= '9' {
+		for j < len(timeStr) && timeStr[j] >= '0' && timeStr[j] <= '9' {
 			j++
 		}
 		numStr := ""
@@ -268,7 +268,7 @@ func AddTime(timeValue interface{}, s string) time.Time {
 			// return tm, fmt.Errorf("missing number at position %d", i)
 			numStr = "1"
 		} else {
-			numStr = s[i:j]
+			numStr = timeStr[i:j]
 		}
 		value, err := strconv.Atoi(numStr)
 		if err != nil {
@@ -282,8 +282,8 @@ func AddTime(timeValue interface{}, s string) time.Time {
 		var unit string
 
 		// 尝试匹配双字符单位
-		if i+2 <= len(s) {
-			unit = s[i : i+2]
+		if i+2 <= len(timeStr) {
+			unit = timeStr[i : i+2]
 			switch unit {
 			case "ms", "us", "ns", "µs", "μs":
 				i += 2
@@ -293,8 +293,8 @@ func AddTime(timeValue interface{}, s string) time.Time {
 		}
 
 		// 尝试匹配单字符单位
-		if unit == "" && i < len(s) {
-			unit = s[i : i+1]
+		if unit == "" && i < len(timeStr) {
+			unit = timeStr[i : i+1]
 			switch unit {
 			case "Y", "M", "D", "h", "m", "s":
 				i++
@@ -302,6 +302,7 @@ func AddTime(timeValue interface{}, s string) time.Time {
 				// return tm, fmt.Errorf("unknown unit '%s' at position %d", unit, i)
 				// 无单位时认为是秒
 				unit = "s"
+				i++
 			}
 		}
 

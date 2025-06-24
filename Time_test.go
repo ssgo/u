@@ -285,7 +285,7 @@ func TestAddTime(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := u.AddTime(baseTime, tt.addExpr)
+			got := u.AddTime(tt.addExpr, baseTime)
 			if !got.Equal(tt.want) && !tt.wantErr {
 				t.Errorf("AddTime() = %v, want %v", got, tt.want)
 			}
