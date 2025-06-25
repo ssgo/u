@@ -25,14 +25,21 @@ func TestParseTime(t *testing.T) {
 		// 2. 纯数字格式
 		{input: "20250623153045", expected: refTime.Truncate(time.Second), name: "YYYYMMDDHHmmSS格式"},
 		{input: "20250623", expected: time.Date(2025, 6, 23, 0, 0, 0, 0, time.Local), name: "YYYYMMDD格式"},
+		{input: "250623", expected: time.Date(2025, 6, 23, 0, 0, 0, 0, time.Local), name: "YYMMDD格式"},
 		{input: "153045", expected: time.Date(0, 1, 1, 15, 30, 45, 0, time.Local), name: "HHmmSS格式"},
 
 		// 3. RFC3339格式
 		{input: "2025-06-23T15:30:45Z", expected: refTime.UTC().Truncate(time.Second), name: "RFC3339 UTC"},
+		{input: "25-06-23T15:30:45Z", expected: refTime.UTC().Truncate(time.Second), name: "RFC3339 UTC"},
 		{input: "2025-06-23T15:30:45.123Z", expected: refTime.UTC().Truncate(time.Millisecond), name: "RFC3339 MS UTC"},
+		{input: "25-06-23T15:30:45.123Z", expected: refTime.UTC().Truncate(time.Millisecond), name: "RFC3339 MS UTC"},
 		{input: "2025-06-23T15:30:45.1Z", expected: refTime.UTC().Truncate(time.Second).Add(100 * time.Millisecond), name: "RFC3339 MS/100 UTC"},
+		{input: "25-06-23T15:30:45.1Z", expected: refTime.UTC().Truncate(time.Second).Add(100 * time.Millisecond), name: "RFC3339 MS/100 UTC"},
 		{input: "2025-06-23T15:30:45+08:00", expected: refTime.Truncate(time.Second), name: "RFC3339 带时区"},
+		{input: "2025.06.23T15:30:45+08:00", expected: refTime.Truncate(time.Second), name: "RFC3339 带时区"},
+		{input: "25-06-23T15:30:45+08:00", expected: refTime.Truncate(time.Second), name: "RFC3339 带时区"},
 		{input: "2025-06-23T15:30:45.123456789+08:00", expected: refTime, name: "RFC3339Nano"},
+		{input: "25-06-23T15:30:45.123456789+08:00", expected: refTime, name: "RFC3339Nano"},
 
 		// 4. JavaScript格式
 		{input: "Mon Jun 23 2025 15:30:45 GMT+0800", expected: refTime.Truncate(time.Second), name: "JS格式1"},
@@ -41,20 +48,40 @@ func TestParseTime(t *testing.T) {
 
 		// 5. 常见日期时间格式
 		{input: "2025-06-23 15:30:45", expected: refTime.Truncate(time.Second), name: "日期时间空格分隔"},
+		{input: "2025-06-23 15:30", expected: refTime.Truncate(time.Minute), name: "日期时间空格分隔，无秒"},
+		{input: "25-06-23 15:30", expected: refTime.Truncate(time.Minute), name: "日期时间空格分隔，无秒"},
+		{input: "06-23 15:30", expected: time.Date(0, 6, 23, 15, 30, 0, 0, time.Local), name: "日期时间空格分隔，无秒"},
+		{input: "25-06-23 15:30:45", expected: refTime.Truncate(time.Second), name: "日期时间空格分隔"},
 		{input: "2025/06/23 15:30:45", expected: refTime.Truncate(time.Second), name: "斜杠分隔"},
+		{input: "25/06/23 15:30:45", expected: refTime.Truncate(time.Second), name: "斜杠分隔"},
 		{input: "06/23/2025 15:30:45", expected: refTime.Truncate(time.Second), name: "美式日期格式"},
 		{input: "2025-06-23", expected: time.Date(2025, 6, 23, 0, 0, 0, 0, time.Local), name: "日期格式"},
+		{input: "2025/06/23", expected: time.Date(2025, 6, 23, 0, 0, 0, 0, time.Local), name: "日期格式"},
+		{input: "2025.06.23", expected: time.Date(2025, 6, 23, 0, 0, 0, 0, time.Local), name: "日期格式"},
+		{input: "25-06-23", expected: time.Date(2025, 6, 23, 0, 0, 0, 0, time.Local), name: "日期格式"},
+		{input: "25/06/23", expected: time.Date(2025, 6, 23, 0, 0, 0, 0, time.Local), name: "日期格式"},
+		{input: "25.06.23", expected: time.Date(2025, 6, 23, 0, 0, 0, 0, time.Local), name: "日期格式"},
 		{input: "15:30:45", expected: time.Date(0, 1, 1, 15, 30, 45, 0, time.Local), name: "时间格式"},
 
 		// 6. 带小数秒的格式
 		{input: "15:30:45.123", expected: time.Date(0, 1, 1, 15, 30, 45, 123000000, time.Local), name: "毫秒时间"},
 		{input: "15:30:45.123456", expected: time.Date(0, 1, 1, 15, 30, 45, 123456000, time.Local), name: "微秒时间"},
 		{input: "2025-06-23 15:30:45.123", expected: refTime.Truncate(time.Millisecond), name: "日期时间毫秒"},
+		{input: "2025-06-23 15:30:45.123456", expected: refTime.Truncate(time.Microsecond), name: "日期时间毫秒"},
+		{input: "2025.06.23 15:30:45.123456", expected: refTime.Truncate(time.Microsecond), name: "日期时间毫秒"},
 
 		// 7. 边界和错误情况
 		{input: "", expected: time.Now(), name: "空字符串"},
 		{input: "invalid-time", expected: time.Now(), name: "无效格式"},
 		{input: "Mon Jan 01 2024 00:00:00 GMT+0800 (中国标准时间)", expected: time.UnixMilli(1704038400000), name: "JS日期解析"},
+
+		// 中文日期
+		{input: "2025年06月23日 15点30分45秒", expected: refTime.Truncate(time.Second), name: "中文日期1"},
+		{input: "2025年06月23日 15时30分45秒", expected: refTime.Truncate(time.Second), name: "中文日期2"},
+		{input: "25年06月23日15时30分45秒", expected: refTime.Truncate(time.Second), name: "中文日期3"},
+		{input: "2025年6月23日 下午3点30分45秒", expected: refTime.Truncate(time.Second), name: "中文日期4"},
+		{input: "2025年6月23日下午3点30分", expected: refTime.Truncate(time.Minute), name: "中文日期5"},
+		{input: "6月23日15点30分", expected: time.Date(0, 6, 23, 15, 30, 0, 0, time.Local), name: "中文日期4"},
 	}
 
 	for _, tc := range tests {

@@ -17,7 +17,7 @@ func ParseTime(v interface{}) time.Time {
 		return tm
 	}
 
-	str := String(v)
+	str := strings.TrimSpace(String(v))
 	var tm time.Time
 	var err error
 
@@ -38,6 +38,11 @@ func ParseTime(v interface{}) time.Time {
 		if len(str) == 6 {
 			if tm, err = time.ParseInLocation("150405", str, time.Local); err == nil {
 				return tm
+			} else {
+				// 尝试解析 060102
+				if tm, err = time.ParseInLocation("060102", str, time.Local); err == nil {
+					return tm
+				}
 			}
 		}
 
@@ -63,48 +68,100 @@ func ParseTime(v interface{}) time.Time {
 			return tm.In(time.Local)
 		}
 	}
+	if len(str) >= 33 && str[8] == 'T' && str[17] == '.' {
+		if tm, err = time.Parse("06-01-02T15:04:05.999999999Z07:00", str); err == nil {
+			return tm.In(time.Local)
+		}
+	}
 
 	// 2006-01-02T15:04:05Z07:00
-	if len(str) >= 25 && str[10] == 'T' && str[19] == 'Z' {
+	if len(str) >= 25 && str[10] == 'T' && strings.Contains(str, "Z") {
 		if tm, err = time.Parse(time.RFC3339, str); err == nil {
+			return tm.In(time.Local)
+		}
+	}
+	if len(str) >= 23 && str[8] == 'T' && strings.Contains(str, "Z") {
+		if tm, err = time.Parse("06-01-02T15:04:05Z07:00", str); err == nil {
 			return tm.In(time.Local)
 		}
 	}
 
 	// 2006-01-02 15:04:05.999999、2006-01-02T15:04:05.999999、2006/01/02 15:04:05.999999、2006/01/02T15:04:05.999999
-	if len(str) >= 26 && (str[4] == '-' || str[4] == '/') && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
+	if len(str) >= 26 && (str[4] == '-' || str[4] == '/' || str[4] == '.') && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
+		str = strings.TrimRight(str, "Z")
 		if tm, err = time.ParseInLocation(fmt.Sprintf("2006%c01%c02%c15:04:05.999999", str[4], str[4], str[10]), str[0:26], time.Local); err == nil {
+			return tm
+		}
+	}
+	// 06-01-02 15:04:05.999999、06-01-02T15:04:05.999999、06/01/02 15:04:05.999999、06/01/02T15:04:05.999999
+	if len(str) >= 24 && (str[2] == '-' || str[2] == '/' || str[2] == '.') && (str[8] == ' ' || str[8] == 'T') && str[17] == '.' {
+		str = strings.TrimRight(str, "Z")
+		if tm, err = time.ParseInLocation(fmt.Sprintf("06%c01%c02%c15:04:05.999999", str[2], str[2], str[8]), str, time.Local); err == nil {
 			return tm
 		}
 	}
 	// 01/02/2006 15:04:05.999999、01/02/2006T15:04:05.999999
 	if len(str) >= 26 && str[2] == '/' && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
+		str = strings.TrimRight(str, "Z")
 		if tm, err = time.ParseInLocation(fmt.Sprintf("01/02/2006%c15:04:05.999999", str[10]), str[0:26], time.Local); err == nil {
 			return tm
 		}
 	}
 	// 2006-01-02 15:04:05.999、2006-01-02T15:04:05.999、2006/01/02 15:04:05.999、2006/01/02T15:04:05.999
-	if len(str) >= 23 && (str[4] == '-' || str[4] == '/') && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
-		if tm, err = time.ParseInLocation(fmt.Sprintf("2006%c01%c02%c15:04:05.999999", str[4], str[4], str[10]), str[0:23], time.Local); err == nil {
+	if len(str) >= 21 && (str[4] == '-' || str[4] == '/' || str[4] == '.') && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
+		str = strings.TrimRight(str, "Z")
+		if tm, err = time.ParseInLocation(fmt.Sprintf("2006%c01%c02%c15:04:05.999999", str[4], str[4], str[10]), str, time.Local); err == nil {
+			return tm
+		}
+	}
+	// 06-01-02 15:04:05.999、06-01-02T15:04:05.999、06/01/02 15:04:05.999、06/01/02T15:04:05.999
+	if len(str) >= 19 && (str[2] == '-' || str[2] == '/' || str[2] == '.') && (str[8] == ' ' || str[8] == 'T') && str[17] == '.' {
+		str = strings.TrimRight(str, "Z")
+		if tm, err = time.ParseInLocation(fmt.Sprintf("06%c01%c02%c15:04:05.999", str[2], str[2], str[8]), str, time.Local); err == nil {
 			return tm
 		}
 	}
 	// 01/02/2006 15:04:05.999、01/02/2006T15:04:05.999
-	if len(str) >= 23 && str[2] == '/' && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
-		if tm, err = time.ParseInLocation(fmt.Sprintf("01/02/2006%c15:04:05.999", str[10]), str[0:23], time.Local); err == nil {
+	if len(str) >= 21 && str[2] == '/' && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
+		str = strings.TrimRight(str, "Z")
+		if tm, err = time.ParseInLocation(fmt.Sprintf("01/02/2006%c15:04:05.999", str[10]), str, time.Local); err == nil {
 			return tm
 		}
 	}
 	// 2006-01-02 15:04:05、2006-01-02T15:04:05、2006/01/02 15:04:05、2006/01/02T15:04:05
-	if len(str) >= 20 && (str[4] == '-' || str[4] == '/') && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
+	if len(str) >= 20 && (str[4] == '-' || str[4] == '/' || str[4] == '.') && (str[10] == ' ' || str[10] == 'T') && str[19] == '.' {
 		str = strings.TrimRight(str, "Z")
 		if tm, err = time.ParseInLocation(fmt.Sprintf("2006%c01%c02%c15:04:05.999", str[4], str[4], str[10]), str, time.Local); err == nil {
 			return tm
 		}
 	}
 	// 2006-01-02 15:04:05、2006-01-02T15:04:05、2006/01/02 15:04:05、2006/01/02T15:04:05
-	if len(str) >= 19 && (str[4] == '-' || str[4] == '/') && (str[10] == ' ' || str[10] == 'T') {
+	if len(str) >= 19 && (str[4] == '-' || str[4] == '/' || str[4] == '.') && (str[10] == ' ' || str[10] == 'T') {
 		if tm, err = time.ParseInLocation(fmt.Sprintf("2006%c01%c02%c15:04:05", str[4], str[4], str[10]), str[0:19], time.Local); err == nil {
+			return tm
+		}
+	}
+	// 2006-01-02 15:04、2006-01-02T15:04、2006/01/02 15:04、2006/01/02T15:04
+	if len(str) >= 16 && (str[4] == '-' || str[4] == '/' || str[4] == '.') && (str[10] == ' ' || str[10] == 'T') {
+		if tm, err = time.ParseInLocation(fmt.Sprintf("2006%c01%c02%c15:04", str[4], str[4], str[10]), str[0:16], time.Local); err == nil {
+			return tm
+		}
+	}
+	// 06-01-02 15:04:05、06-01-02T15:04:05、06/01/02 15:04:05、06/01/02T15:04:05
+	if len(str) >= 17 && (str[2] == '-' || str[2] == '/' || str[2] == '.') && (str[8] == ' ' || str[8] == 'T') {
+		if tm, err = time.ParseInLocation(fmt.Sprintf("06%c01%c02%c15:04:05", str[2], str[2], str[8]), str[0:17], time.Local); err == nil {
+			return tm
+		}
+	}
+	// 06-01-02 15:04、06-01-02T15:04、06/01/02 15:04、06/01/02T15:04
+	if len(str) >= 14 && (str[2] == '-' || str[2] == '/' || str[2] == '.') && (str[8] == ' ' || str[8] == 'T') {
+		if tm, err = time.ParseInLocation(fmt.Sprintf("06%c01%c02%c15:04", str[2], str[2], str[8]), str[0:14], time.Local); err == nil {
+			return tm
+		}
+	}
+	// 01-02 15:04、01-02T15:04、01/02 15:04、01/02T15:04
+	if len(str) >= 11 && (str[2] == '-' || str[2] == '/' || str[2] == '.') && (str[5] == ' ' || str[5] == 'T') {
+		if tm, err = time.ParseInLocation(fmt.Sprintf("01%c02%c15:04", str[2], str[5]), str[0:11], time.Local); err == nil {
 			return tm
 		}
 	}
@@ -128,13 +185,19 @@ func ParseTime(v interface{}) time.Time {
 	}
 	// 15:04:05
 	if len(str) >= 8 && str[2] == ':' {
+		str = strings.TrimRight(str, "Z")
 		if tm, err = time.ParseInLocation("15:04:05", str[:8], time.Local); err == nil {
 			return tm
 		}
 	}
 	// 2006-01-02、2006/01/02
-	if len(str) >= 10 && (str[4] == '-' || str[4] == '/') {
+	if len(str) >= 10 && (str[4] == '-' || str[4] == '/' || str[4] == '.') {
 		if tm, err = time.ParseInLocation(fmt.Sprintf("2006%c01%c02", str[4], str[4]), str[:10], time.Local); err == nil {
+			return tm
+		}
+	}
+	if len(str) >= 8 && (str[2] == '-' || str[2] == '/' || str[2] == '.') {
+		if tm, err = time.ParseInLocation(fmt.Sprintf("06%c01%c02", str[2], str[2]), str[:8], time.Local); err == nil {
 			return tm
 		}
 	}
@@ -195,9 +258,37 @@ func ParseTime(v interface{}) time.Time {
 		}
 	}
 
+	if strings.ContainsRune(str, '日') || strings.ContainsRune(str, '分') {
+		// 处理全角和多余空格
+		str = strings.ReplaceAll(str, "：", ":")
+		str = strings.ReplaceAll(str, " ", "")
+		var y, m, d, h, mm, s int
+		if cnDateM := cnDateRegex.FindStringSubmatch(str); len(cnDateM) == 4 {
+			y = Int(cnDateM[1])
+			m = Int(cnDateM[2])
+			d = Int(cnDateM[3])
+			if y > 0 && y < 100 {
+				y += 2000
+			}
+		}
+		if cnTimeM := cnTimeRegex.FindStringSubmatch(str); len(cnTimeM) == 5 {
+			h = Int(cnTimeM[2])
+			mm = Int(cnTimeM[3])
+			s = Int(cnTimeM[4])
+			if cnTimeM[1] == "下午" && h < 12 {
+				h += 12
+			} else if cnTimeM[1] == "上午" && h >= 12 {
+				h -= 12
+			}
+		}
+		return time.Date(y, time.Month(m), d, h, mm, s, 0, time.Local)
+	}
+
 	return time.Now()
 }
 
+var cnDateRegex = regexp.MustCompile(`(\d{2,4})?年?(\d{1,2})月(\d{1,2})日`)
+var cnTimeRegex = regexp.MustCompile(`(上午|下午)?(\d{1,2})(?:时|点|：)(\d{1,2})(?:分|：)(\d{1,2})?秒?`)
 var dateFormatPattern = regexp.MustCompile(`[a-zA-Z]+`)
 
 func FormatTime(layout string, timeValue interface{}) string {
