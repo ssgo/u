@@ -699,6 +699,14 @@ func AppendUniqueStrings(to []string, from []string) []string {
 	return to
 }
 
+func MakeBoolMap(str string) map[string]bool {
+	r := map[string]bool{}
+	for _, s := range SplitWithoutNone(str, ",") {
+		r[s] = true
+	}
+	return r
+}
+
 // 修复Golang中Json默认处理HTML转义 < > & 的问题
 func FixJsonBytes(b []byte) []byte {
 	l := len(b)
@@ -964,4 +972,54 @@ func UnYamlArr(data string) []interface{} {
 	value := make([]interface{}, 0)
 	UnYaml(data, &value)
 	return value
+}
+
+func StringPtr(value string) *string {
+	return &value
+}
+
+func StringSlicePtr(value []string) *[]string {
+	return &value
+}
+
+func IntPtr(value int) *int {
+	return &value
+}
+
+func IntSlicePtr(value []int) *[]int {
+	return &value
+}
+
+func UIntPtr(value uint) *uint {
+	return &value
+}
+
+func Int64Ptr(value int64) *int64 {
+	return &value
+}
+
+func UInt64Ptr(value uint64) *uint64 {
+	return &value
+}
+
+func Float32Ptr(value float32) *float32 {
+	return &value
+}
+
+func Float64Ptr(value float64) *float64 {
+	return &value
+}
+
+var trueValue = true
+var falseValue = false
+
+func BoolPtr(value bool) *bool {
+	if value {
+		return &trueValue
+	}
+	return &falseValue
+}
+
+func MapPtr(value map[string]interface{}) *map[string]interface{} {
+	return &value
 }

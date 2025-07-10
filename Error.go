@@ -32,8 +32,8 @@ func Error(err string) *Err {
 		if strings.Contains(file, "/ssgo/log") {
 			continue
 		}
-		if strings.Contains(file, "/ssgo/") {
-			file = "**" + file[strings.LastIndex(file, "/ssgo/"):]
+		if strings.Contains(file, "/ssgo") {
+			file = "**" + file[strings.LastIndex(file, "/ssgo"):]
 		}
 		callStacks = append(callStacks, fmt.Sprintf("%s:%d", file, line))
 	}
