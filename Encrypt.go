@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -262,9 +263,11 @@ func MD5String(data string) string {
 	return hex.EncodeToString(MD5([]byte(data)))
 }
 
-func MD5(data []byte) []byte {
+func MD5(data ...[]byte) []byte {
 	hash := md5.New()
-	hash.Write(data)
+	for _, v := range data {
+		hash.Write(v)
+	}
 	return hash.Sum([]byte{})
 }
 
@@ -276,9 +279,11 @@ func Sha1String(data string) string {
 	return hex.EncodeToString(Sha1([]byte(data)))
 }
 
-func Sha1(data []byte) []byte {
+func Sha1(data ...[]byte) []byte {
 	hash := sha1.New()
-	hash.Write(data)
+	for _, v := range data {
+		hash.Write(v)
+	}
 	return hash.Sum([]byte{})
 }
 
@@ -290,9 +295,11 @@ func Sha256String(data string) string {
 	return hex.EncodeToString(Sha256([]byte(data)))
 }
 
-func Sha256(data []byte) []byte {
+func Sha256(data ...[]byte) []byte {
 	hash := sha256.New()
-	hash.Write(data)
+	for _, v := range data {
+		hash.Write(v)
+	}
 	return hash.Sum([]byte{})
 }
 
@@ -304,10 +311,48 @@ func Sha512String(data string) string {
 	return hex.EncodeToString(Sha512([]byte(data)))
 }
 
-func Sha512(data []byte) []byte {
+func Sha512(data ...[]byte) []byte {
 	hash := sha512.New()
-	hash.Write(data)
+	for _, v := range data {
+		hash.Write(v)
+	}
 	return hash.Sum([]byte{})
+}
+
+func HmacMD5(key []byte, data ...[]byte) []byte {
+	hash := hmac.New(md5.New, key)
+	for _, v := range data {
+		hash.Write(v)
+	}
+	return hash.Sum([]byte{})
+}
+
+func HmacSha1(key []byte, data ...[]byte) []byte {
+	hash := hmac.New(sha1.New, key)
+	for _, v := range data {
+		hash.Write(v)
+	}
+	return hash.Sum([]byte{})
+}
+
+func HmacSha256(key []byte, data ...[]byte) []byte {
+	hash := hmac.New(sha256.New, key)
+	for _, v := range data {
+		hash.Write(v)
+	}
+	return hash.Sum([]byte{})
+}
+
+func HmacSha512(key []byte, data ...[]byte) []byte {
+	hash := hmac.New(sha512.New, key)
+	for _, v := range data {
+		hash.Write(v)
+	}
+	return hash.Sum([]byte{})
+}
+
+func Hex(data []byte) string {
+	return hex.EncodeToString(data)
 }
 
 func Base64(data []byte) string {

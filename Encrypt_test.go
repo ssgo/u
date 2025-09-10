@@ -2,8 +2,9 @@ package u_test
 
 import (
 	"fmt"
-	"github.com/ssgo/u"
 	"testing"
+
+	"github.com/ssgo/u"
 )
 
 func TestEncodeInt(t *testing.T) {
@@ -27,6 +28,7 @@ func TestEncodeSha(t *testing.T) {
 	fmt.Println(u.Sha256Base64("Hello"))
 	fmt.Println(u.Sha512String("Hello"))
 	fmt.Println(u.Sha512Base64("Hello"))
+	fmt.Println(u.Hex(u.HmacSha256([]byte("key"), []byte("data"), []byte("data2"))))
 }
 
 func TestAes(t *testing.T) {
