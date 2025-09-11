@@ -569,6 +569,9 @@ func flatStruct(data interface{}, onlyExported bool) *StructInfo {
 
 func makeStructInfo(v reflect.Value, out *StructInfo, onlyExported bool) {
 	fv := v
+	for v.Kind() == reflect.Ptr && v.Elem().Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
 	if v.Kind() == reflect.Ptr && v.Elem().Kind() == reflect.Struct {
 		fv = v.Elem()
 	}
