@@ -1,9 +1,13 @@
 package u
 
 import (
+	"archive/tar"
+	"archive/zip"
 	"bufio"
 	"bytes"
+	"compress/bzip2"
 	"compress/gzip"
+	"compress/zlib"
 	"encoding/json"
 	"io"
 	"os"
@@ -145,39 +149,286 @@ func loadFileToMemory(filename string, compress bool) {
 	}
 }
 
-func Gzip(data []byte) ([]byte, error) {
+// func Gzip(data []byte) ([]byte, error) {
+// 	var buf bytes.Buffer
+// 	var err error
+// 	gzWriter := gzip.NewWriter(&buf)
+// 	if _, err = gzWriter.Write(data); err == nil {
+// 		err = gzWriter.Close()
+// 		return buf.Bytes(), err
+// 	}
+// 	return data, err
+// }
+
+// func Gunzip(data []byte) ([]byte, error) {
+// 	bufR := bytes.NewReader(data)
+// 	var err error
+// 	var gzReader *gzip.Reader
+// 	if gzReader, err = gzip.NewReader(bufR); err == nil {
+// 		defer gzReader.Close()
+// 		var buf []byte
+// 		if buf, err = io.ReadAll(gzReader); err == nil {
+// 			return buf, nil
+// 		}
+// 	}
+// 	return data, err
+// }
+
+// func GzipN(data []byte) []byte {
+// 	buf, _ := Gzip(data)
+// 	return buf
+// }
+
+// func GunzipN(data []byte) []byte {
+// 	buf, _ := Gunzip(data)
+// 	return buf
+// }
+
+func Compress(data []byte, cType string) ([]byte, error) {
 	var buf bytes.Buffer
+	var w io.WriteCloser
+
+	lcType := strings.ToLower(cType)
+	switch lcType {
+	case "gzip", "gz":
+		w = gzip.NewWriter(&buf)
+	default:
+		w = zlib.NewWriter(&buf)
+	}
+
+	if _, err := w.Write(data); err != nil {
+		return data, err
+	}
+	w.Close()
+	return buf.Bytes(), nil
+}
+
+func Decompress(data []byte, cType string) ([]byte, error) {
+	bufR := bytes.NewReader(data)
+	var r io.ReadCloser
 	var err error
-	gzWriter := gzip.NewWriter(&buf)
-	if _, err = gzWriter.Write(data); err == nil {
-		err = gzWriter.Close()
-		return buf.Bytes(), err
+
+	lcType := strings.ToLower(cType)
+	switch lcType {
+	case "gzip", "gz":
+		r, err = gzip.NewReader(bufR)
+	default:
+		r, err = zlib.NewReader(bufR)
+	}
+
+	if err != nil {
+		return data, err
+	}
+	defer r.Close()
+	if out, err := io.ReadAll(r); err == nil {
+		return out, nil
 	}
 	return data, err
 }
 
-func Gunzip(data []byte) ([]byte, error) {
-	bufR := bytes.NewReader(data)
-	var err error
-	var gzReader *gzip.Reader
-	if gzReader, err = gzip.NewReader(bufR); err == nil {
-		defer gzReader.Close()
-		var buf []byte
-		if buf, err = io.ReadAll(gzReader); err == nil {
-			return buf, nil
+// 你要求的原有接口保持不变
+func Gzip(data []byte) ([]byte, error)   { return Compress(data, "gzip") }
+func Gunzip(data []byte) ([]byte, error) { return Decompress(data, "gzip") }
+func GzipN(data []byte) []byte           { b, _ := Gzip(data); return b }
+func GunzipN(data []byte) []byte         { b, _ := Gunzip(data); return b }
+func Zip(data []byte) ([]byte, error)    { return Compress(data, "zlib") }
+func Unzip(data []byte) ([]byte, error)  { return Decompress(data, "zlib") }
+func ZipN(data []byte) []byte            { b, _ := Zip(data); return b }
+func UnzipN(data []byte) []byte          { b, _ := Unzip(data); return b }
+
+// Extract 自动识别格式并解压 (支持 .zip, .tar.gz, .tgz, .tar, .gz, .bz2)
+func Extract(srcFile, destDir string, stripRoot bool) error {
+	f, err := os.Open(srcFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	lowerSrc := strings.ToLower(srcFile)
+
+	switch {
+	case strings.HasSuffix(lowerSrc, ".zip"):
+		return extractZip(srcFile, destDir, stripRoot)
+
+	case strings.HasSuffix(lowerSrc, ".tar.gz") || strings.HasSuffix(lowerSrc, ".tgz"):
+		gzr, _ := gzip.NewReader(f)
+		defer gzr.Close()
+		return extractTar(gzr, destDir, stripRoot)
+
+	case strings.HasSuffix(lowerSrc, ".tar"):
+		return extractTar(f, destDir, stripRoot)
+
+	case strings.HasSuffix(lowerSrc, ".gz"):
+		// 纯 gzip 文件，解压为单个文件
+		gzr, _ := gzip.NewReader(f)
+		defer gzr.Close()
+		return extractSingleFile(gzr, destDir, strings.TrimSuffix(filepath.Base(srcFile), ".gz"))
+
+	case strings.HasSuffix(lowerSrc, ".bz2"):
+		// bzip2 仅支持解压
+		bzr := bzip2.NewReader(f)
+		return extractSingleFile(bzr, destDir, strings.TrimSuffix(filepath.Base(srcFile), ".bz2"))
+
+	default:
+		return extractZip(srcFile, destDir, stripRoot)
+	}
+}
+
+// extractTar 处理所有的 Tar 变体 (tar, tar.gz)
+func extractTar(r io.Reader, dest string, strip bool) error {
+	tr := tar.NewReader(r)
+	for {
+		h, err := tr.Next()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if err := writeEntry(dest, h.Name, h.FileInfo().Mode(), h.Typeflag == tar.TypeDir, h.Linkname, tr, strip); err != nil {
+			return err
 		}
 	}
-	return data, err
 }
 
-func GzipN(data []byte) []byte {
-	buf, _ := Gzip(data)
-	return buf
+// extractZip 处理 Zip
+func extractZip(src, dest string, strip bool) error {
+	rz, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer rz.Close()
+	for _, f := range rz.File {
+		rc, _ := f.Open()
+		var linkTarget string
+		if f.Mode()&os.ModeSymlink != 0 {
+			b, _ := io.ReadAll(rc)
+			linkTarget = string(b)
+		}
+		err := writeEntry(dest, f.Name, f.Mode(), f.FileInfo().IsDir(), linkTarget, rc, strip)
+		rc.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func GunzipN(data []byte) []byte {
-	buf, _ := Gunzip(data)
-	return buf
+// extractSingleFile 用于处理 .gz 或 .bz2 这种单文件压缩
+func extractSingleFile(r io.Reader, destDir, fileName string) error {
+	os.MkdirAll(destDir, 0755)
+	target := filepath.Join(destDir, fileName)
+	out, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, r)
+	return err
+}
+
+// writeEntry 核心磁盘写入逻辑
+func writeEntry(destDir, name string, mode os.FileMode, isDir bool, linkPath string, r io.Reader, strip bool) error {
+	if strip {
+		parts := strings.SplitN(name, "/", 2)
+		if len(parts) < 2 || parts[1] == "" {
+			return nil
+		}
+		name = parts[1]
+	}
+	target := filepath.Join(destDir, name)
+
+	if isDir {
+		return os.MkdirAll(target, 0755)
+	}
+	os.MkdirAll(filepath.Dir(target), 0755)
+
+	if mode&os.ModeSymlink != 0 {
+		os.Remove(target)
+		return os.Symlink(linkPath, target)
+	}
+
+	out, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, mode)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, r)
+	return err
+}
+
+// Archive 将目录或文件打包成 zip 或 tar.gz
+func Archive(srcPath, destFile string) error {
+	f, err := os.Create(destFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	lower := strings.ToLower(destFile)
+	if strings.HasSuffix(lower, ".zip") {
+		zw := zip.NewWriter(f)
+		defer zw.Close()
+		return walkAndAdd(srcPath, func(relPath string, info os.FileInfo, fileReader io.Reader) error {
+			header, _ := zip.FileInfoHeader(info)
+			header.Name = relPath
+			if info.IsDir() {
+				header.Name += "/"
+			} else {
+				header.Method = zip.Deflate
+			}
+			w, err := zw.CreateHeader(header)
+			if err != nil || info.IsDir() {
+				return err
+			}
+			_, err = io.Copy(w, fileReader)
+			return err
+		})
+	}
+
+	// 默认处理为 .tar.gz
+	gw := gzip.NewWriter(f)
+	defer gw.Close()
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+	return walkAndAdd(srcPath, func(relPath string, info os.FileInfo, fileReader io.Reader) error {
+		header, _ := tar.FileInfoHeader(info, "")
+		header.Name = relPath
+		if info.Mode()&os.ModeSymlink != 0 {
+			link, _ := os.Readlink(filepath.Join(srcPath, "..", relPath)) // 简化逻辑
+			header.Linkname = link
+		}
+		if err := tw.WriteHeader(header); err != nil || info.IsDir() || header.Typeflag == tar.TypeSymlink {
+			return err
+		}
+		_, err = io.Copy(tw, fileReader)
+		return err
+	})
+}
+
+// walkAndAdd 内部通用的文件树遍历辅助函数
+func walkAndAdd(srcPath string, addFn func(string, os.FileInfo, io.Reader) error) error {
+	baseDir := filepath.Dir(srcPath)
+	return filepath.Walk(srcPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		relPath, _ := filepath.Rel(baseDir, path)
+		if relPath == "." {
+			return nil
+		}
+
+		var r io.Reader
+		if !info.IsDir() && info.Mode()&os.ModeSymlink == 0 {
+			f, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			r = f
+		}
+		return addFn(filepath.ToSlash(relPath), info, r)
+	})
 }
 
 func LoadFileToB64(filename string) *MemFileB64 {
@@ -558,7 +809,10 @@ func CopyToFile(from io.Reader, to string) error {
 }
 
 func CopyFile(from, to string) error {
-	fromStat, _ := os.Stat(from)
+	fromStat, err := os.Stat(from)
+	if err != nil {
+		return err
+	}
 	if fromStat.IsDir() {
 		// copy dir
 		for _, f := range ReadDirN(from) {
