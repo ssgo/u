@@ -1,6 +1,7 @@
 package u_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -32,15 +33,17 @@ func TestEncodeSha(t *testing.T) {
 }
 
 func TestAes(t *testing.T) {
+	testData := []byte("Hello Password!")
+	defer u.ZeroMemory(testData)
+	testBuf := u.NewSafeBuf(testData)
 
-	testString := "Hello Password!"
+	aes, _ := u.NewAESGCMAndEraseKey([]byte("vpL54DlR2KG{JSAaAX7Tu;*#&DnG`M0o"), []byte("@z]zv@10-K.5Al0Dm`@foq9k\"VRfJ^~j"))
+	encrypted, _ := aes.Encrypt(testBuf)
+	decrypted, _ := aes.Decrypt(encrypted)
 
-	key := []byte("vpL54DlR2KG{JSAaAX7Tu;*#&DnG`M0o")
-	iv := []byte("@z]zv@10-K.5Al0Dm`@foq9k\"VRfJ^~j")
-	encrypted := u.EncryptAes(testString, key, iv)
-	decrypted := u.DecryptAes(encrypted, key, iv)
-
-	if decrypted != testString {
+	decryptedBuf := decrypted.Open()
+	defer decryptedBuf.Close()
+	if !bytes.Equal(decryptedBuf.Data, testData) {
 		t.Error("Decrypt failed", encrypted, decrypted)
 	}
 }

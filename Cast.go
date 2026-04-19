@@ -460,30 +460,27 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 			keys = append(keys, "")
 		}
 
-		if data[i] == '{' {
+		switch data[i] {
+		case '{':
 			tpos++
 			types[tpos] = true
 			keys[tpos] = ""
-			//log.Println(" >>>1 ", types, tpos)
-		} else if data[i] == '}' {
+		case '}':
 			tpos--
-			//log.Println(" >>>2 ", types, tpos)
 		}
-		if data[i] == '[' {
+		switch data[i] {
+		case '[':
 			tpos++
 			types[tpos] = false
 			keys[tpos] = ""
-			//log.Println(" >>>3 ", types, tpos)
-		} else if data[i] == ']' {
+		case ']':
 			tpos--
-			//log.Println(" >>>4 ", types, tpos)
 		}
 		if data[i] == '"' {
 			keyPos := -1
 			if i > 0 && (data[i-1] == '{' || (data[i-1] == ',' && tpos >= 0 && types[tpos])) {
 				keyPos = i + 1
 			}
-			// skip string
 			i++
 			for ; i < n-1; i++ {
 				if data[i] == '\\' {
@@ -499,7 +496,7 @@ func FixUpperCase(data []byte, excludesKeys []string) {
 			}
 
 			if keyPos >= 0 && (data[keyPos] >= 'A' && data[keyPos] <= 'Z') {
-				if excludesKeys != nil && len(excludesKeys) > 0 {
+				if len(excludesKeys) > 0 {
 					// 是否排除
 					excluded := false
 					checkStr := strings.Join(keys[0:tpos+1], ".")
@@ -691,7 +688,7 @@ func AppendUniqueString(to []string, from string) []string {
 }
 
 func AppendUniqueStrings(to []string, from []string) []string {
-	if from != nil {
+	if len(from) > 0 {
 		for _, fromStr := range from {
 			to = AppendUniqueString(to, fromStr)
 		}

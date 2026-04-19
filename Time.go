@@ -351,9 +351,10 @@ func AddTime(timeStr string, timeValue interface{}) time.Time {
 	for i < len(timeStr) {
 		// 处理每部分的符号（默认正数）
 		sign := 1
-		if timeStr[i] == '+' {
+		switch timeStr[i] {
+		case '+':
 			i++
-		} else if timeStr[i] == '-' {
+		case '-':
 			sign = -1
 			i++
 		}

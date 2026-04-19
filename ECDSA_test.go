@@ -1,40 +1,55 @@
 package u_test
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/ssgo/u"
 	"testing"
+	"time"
+
+	"github.com/ssgo/u"
 )
 
 func TestSign(t *testing.T) {
 
-	priS, pubS, err := u.GenECDSA256Key()
+	priKeyBuf, pubKeyBuf, err := u.GenerateECDSAKeyPair(521)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	priK, err := u.MakeECDSA256PrivateKey(priS)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	pubK, err := u.MakeECDSA256PublicKey(pubS)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	ecdsa, _ := u.NewECDSAndEraseKey(priKeyBuf, pubKeyBuf)
 
 	okCount := 0
-	testCount := 1000
-	for i:=0; i<testCount; i++ {
+	testCount := 100
+	t1 := time.Now()
+
+	for i := 0; i < testCount; i++ {
 		data := u.MakeToken(10)
-		sign, err := u.SignECDSA(data, priK)
+		sign, err := ecdsa.Sign(data)
 		if err != nil {
 			t.Fatal(err.Error())
 		}
-		if u.VerifyECDSA(data, sign, pubK) {
-			okCount ++
+		if ok, err := ecdsa.Verify(data, sign); ok && err == nil {
+			okCount++
 		}
 	}
 	if okCount != testCount {
-		t.Fatal("VerifyECDSA Error "+u.String(okCount))
+		t.Fatal("VerifyECDSA Error " + u.String(okCount))
 	}
-	fmt.Println(okCount, testCount)
+	t2 := time.Now()
+	fmt.Println(okCount, testCount, t2.Sub(t1))
+
+	data := u.MakeToken(10)
+	crypted, err := ecdsa.Encrypt(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decryptedData, err := ecdsa.Decrypt(crypted)
+	t3 := time.Now()
+	fmt.Println("DecryptECDSA Time:", t3.Sub(t2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(decryptedData, data) {
+		t.Fatal("DecryptECDSA Error", decryptedData, data)
+	}
+
 }

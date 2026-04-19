@@ -21,44 +21,44 @@ const randMax3BitNumber = 238327                             // UUU (999)
 const rand3BitNumber = randMax3BitNumber - randMin3BitNumber // 3位
 
 func UniqueId() string {
-	buf := EncodeInt(uint64(GlobalRand1.Int63n(rand6BitNumber) + randMin6BitNumber))
+	buf := EncodeInt(uint64(GlobalRand1.Int64N(rand6BitNumber) + randMin6BitNumber))
 	buf = AppendInt(buf, uint64(time.Now().UnixNano()/1000))
-	buf = AppendInt(buf, uint64(GlobalRand2.Int63n(rand6BitNumber)+randMin6BitNumber))
+	buf = AppendInt(buf, uint64(GlobalRand2.Int64N(rand6BitNumber)+randMin6BitNumber))
 	return string(cutId(buf, 20))
 }
 
 func ShortUniqueId() string {
-	buf := EncodeInt(uint64(GlobalRand1.Int63n(rand3BitNumber) + randMin3BitNumber))
+	buf := EncodeInt(uint64(GlobalRand1.Int64N(rand3BitNumber) + randMin3BitNumber))
 	buf = AppendInt(buf, uint64(time.Now().UnixNano()/1000%(86400000000*100)))
-	buf = AppendInt(buf, uint64(GlobalRand2.Int63n(rand4BitNumber)+randMin4BitNumber))
+	buf = AppendInt(buf, uint64(GlobalRand2.Int64N(rand4BitNumber)+randMin4BitNumber))
 	return string(cutId(buf, 14))
 }
 
 // 约312303亿亿
 func Id12() string {
-	buf := EncodeInt(uint64(GlobalRand1.Int63n(rand6BitNumber) + randMin6BitNumber))
-	buf = AppendInt(buf, uint64(GlobalRand2.Int63n(rand6BitNumber)+randMin6BitNumber))
+	buf := EncodeInt(uint64(GlobalRand1.Int64N(rand6BitNumber) + randMin6BitNumber))
+	buf = AppendInt(buf, uint64(GlobalRand2.Int64N(rand6BitNumber)+randMin6BitNumber))
 	return string(cutId(buf, 12))
 }
 
 // 约81亿亿
 func Id10() string {
-	buf := EncodeInt(uint64(GlobalRand1.Int63n(rand5BitNumber) + randMin5BitNumber))
-	buf = AppendInt(buf, uint64(GlobalRand2.Int63n(rand5BitNumber)+randMin5BitNumber))
+	buf := EncodeInt(uint64(GlobalRand1.Int64N(rand5BitNumber) + randMin5BitNumber))
+	buf = AppendInt(buf, uint64(GlobalRand2.Int64N(rand5BitNumber)+randMin5BitNumber))
 	return string(cutId(buf, 10))
 }
 
 // 约 2113536亿
 func Id8() string {
-	buf := EncodeInt(uint64(GlobalRand1.Int63n(rand4BitNumber) + randMin4BitNumber))
-	buf = AppendInt(buf, uint64(GlobalRand2.Int63n(rand4BitNumber)+randMin4BitNumber))
+	buf := EncodeInt(uint64(GlobalRand1.Int64N(rand4BitNumber) + randMin4BitNumber))
+	buf = AppendInt(buf, uint64(GlobalRand2.Int64N(rand4BitNumber)+randMin4BitNumber))
 	return string(cutId(buf, 8))
 }
 
 // 约 550亿
 func Id6() string {
-	buf := EncodeInt(uint64(GlobalRand1.Int63n(rand3BitNumber) + randMin3BitNumber))
-	buf = AppendInt(buf, uint64(GlobalRand2.Int63n(rand3BitNumber)+randMin3BitNumber))
+	buf := EncodeInt(uint64(GlobalRand1.Int64N(rand3BitNumber) + randMin3BitNumber))
+	buf = AppendInt(buf, uint64(GlobalRand2.Int64N(rand3BitNumber)+randMin3BitNumber))
 	return string(cutId(buf, 6))
 }
 

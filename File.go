@@ -28,13 +28,14 @@ type MemFile struct {
 	Compressed bool
 	Size       int64
 	Data       []byte
+	SafeData   *SafeBuf
 }
 
 type MemFileB64 struct {
 	Name       string
 	ModTime    time.Time
 	IsDir      bool
-	DataB64    string
+	DataB64    []byte
 	Compressed bool
 	Size       int64
 	Children   []MemFileB64
@@ -53,10 +54,17 @@ var memFilesByDir = make(map[string][]MemFile)
 var memFilesLock sync.RWMutex
 
 func (mf *MemFile) GetData() []byte {
+	if mf.SafeData != nil {
+		return mf.SafeData.Open().Data
+	}
 	if mf.Compressed {
 		return GunzipN(mf.Data)
 	}
 	return mf.Data
+}
+
+func (mf *MemFile) GetSafeData() *SafeBuf {
+	return mf.SafeData
 }
 
 func GetAbsFilename(filename string) string {
@@ -82,9 +90,7 @@ func ReadDirFromMemory(name string) []MemFile {
 	mfList := memFilesByDir[name]
 	if mfList != nil {
 		dirFiles = make([]MemFile, len(mfList))
-		for i, mf := range mfList {
-			dirFiles[i] = mf
-		}
+		copy(dirFiles, mfList)
 	}
 	memFilesLock.RUnlock()
 	return dirFiles
@@ -105,14 +111,22 @@ func AddFileToMemory(memFile MemFile) {
 }
 
 func LoadFileToMemory(filename string) {
-	loadFileToMemory(filename, false)
+	loadFileToMemory(filename, false, false)
+}
+
+func SafeLoadFileToMemory(filename string) {
+	loadFileToMemory(filename, false, true)
 }
 
 func LoadFileToMemoryWithCompress(filename string) {
-	loadFileToMemory(filename, true)
+	loadFileToMemory(filename, true, false)
 }
 
-func loadFileToMemory(filename string, compress bool) {
+func SafeLoadFileToMemoryWithCompress(filename string) {
+	loadFileToMemory(filename, true, true)
+}
+
+func loadFileToMemory(filename string, compress bool, isSafe bool) {
 	if info, err := os.Stat(filename); err == nil {
 		if info.IsDir() {
 			AddFileToMemory(MemFile{
@@ -471,38 +485,40 @@ func LoadFileToB64(filename string) *MemFileB64 {
 }
 
 func LoadFilesToMemoryFromB64(b64File *MemFileB64) {
-	data := UnBase64(b64File.DataB64)
-	if b64File.Compressed {
-		data = GunzipN(data)
-	}
-	memFile := MemFile{
-		Name:    b64File.Name,
-		ModTime: b64File.ModTime,
-		IsDir:   b64File.IsDir,
-		Size:    b64File.Size,
-		Data:    data,
-	}
-	AddFileToMemory(memFile)
-	if memFile.IsDir && len(b64File.Children) > 0 {
-		for _, child := range b64File.Children {
-			LoadFilesToMemoryFromB64(&child)
+	if data, err := UnBase64(b64File.DataB64); err == nil {
+		if b64File.Compressed {
+			data = GunzipN(data)
+		}
+		memFile := MemFile{
+			Name:    b64File.Name,
+			ModTime: b64File.ModTime,
+			IsDir:   b64File.IsDir,
+			Size:    b64File.Size,
+			Data:    data,
+		}
+		AddFileToMemory(memFile)
+		if memFile.IsDir && len(b64File.Children) > 0 {
+			for _, child := range b64File.Children {
+				LoadFilesToMemoryFromB64(&child)
+			}
 		}
 	}
 }
 
 func LoadFilesToMemoryFromB64KeepGzip(b64File *MemFileB64) {
-	data := UnBase64(b64File.DataB64)
-	memFile := MemFile{
-		Name:    b64File.Name,
-		ModTime: b64File.ModTime,
-		IsDir:   b64File.IsDir,
-		Size:    b64File.Size,
-		Data:    data,
-	}
-	AddFileToMemory(memFile)
-	if memFile.IsDir && len(b64File.Children) > 0 {
-		for _, child := range b64File.Children {
-			LoadFilesToMemoryFromB64(&child)
+	if data, err := UnBase64(b64File.DataB64); err == nil {
+		memFile := MemFile{
+			Name:    b64File.Name,
+			ModTime: b64File.ModTime,
+			IsDir:   b64File.IsDir,
+			Size:    b64File.Size,
+			Data:    data,
+		}
+		AddFileToMemory(memFile)
+		if memFile.IsDir && len(b64File.Children) > 0 {
+			for _, child := range b64File.Children {
+				LoadFilesToMemoryFromB64(&child)
+			}
 		}
 	}
 }
