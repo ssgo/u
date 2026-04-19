@@ -124,26 +124,60 @@ func DecodeInt(buf []byte) uint64 {
 	return DefaultIntEncoder.DecodeInt(buf)
 }
 
+// func ExchangeInt(buf []byte) []byte {
+// 	size := len(buf)
+// 	buf2 := make([]byte, size)
+// 	buf2_i := 0
+// 	buf2_ai := 0
+// 	buf2_ri := size - 1
+// 	for i := range size {
+// 		if i%2 == 0 {
+// 			// 从后往前取
+// 			buf2[buf2_i] = buf[buf2_ri]
+// 			buf2_i++
+// 			buf2_ri--
+// 		} else {
+// 			// 从前往后取
+// 			buf2[buf2_i] = buf[buf2_ai]
+// 			buf2_i++
+// 			buf2_ai++
+// 		}
+// 	}
+// 	return buf2
+// }
+
 func ExchangeInt(buf []byte) []byte {
 	size := len(buf)
-	buf2 := make([]byte, size)
+	if size <= 1 {
+		return buf
+	}
+
+	var buf2 []byte
+	if size <= 20 {
+		var tmp [20]byte // 栈分配：极致性能，零垃圾回收负担
+		buf2 = tmp[:size]
+	} else {
+		buf2 = make([]byte, size)
+	}
 	buf2_i := 0
 	buf2_ai := 0
 	buf2_ri := size - 1
 	for i := range size {
 		if i%2 == 0 {
-			// 从后往前取
+			// 偶数次：从后往前取
 			buf2[buf2_i] = buf[buf2_ri]
-			buf2_i++
 			buf2_ri--
 		} else {
-			// 从前往后取
+			// 奇数次：从前往后取
 			buf2[buf2_i] = buf[buf2_ai]
-			buf2_i++
 			buf2_ai++
 		}
+		buf2_i++
 	}
-	return buf2
+
+	// 将打乱后的栈数据拷贝回原切片，实现“原地修改”
+	copy(buf, buf2)
+	return buf
 }
 
 func HashInt(buf []byte) []byte {

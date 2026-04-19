@@ -2,8 +2,9 @@ package u_test
 
 import (
 	"fmt"
-	"github.com/ssgo/u"
 	"testing"
+
+	"github.com/ssgo/u"
 )
 
 //func TestId(t *testing.T) {
@@ -17,24 +18,24 @@ import (
 //}
 
 func TestUniqueId(t *testing.T) {
-	fmt.Println(u.UniqueId())
+	fmt.Println(u.MakeId(12))
 	uids := map[string]bool{}
-	for i := 0; i < 100000; i++ {
-		uid := u.UniqueId()
-		if uids[uid] {
-			t.Error("unique id repeated ", uids, uid)
+	for range 100000 {
+		uid := u.MakeId(12)
+		if uids[uid] || len(uid) != 12 {
+			t.Error("unique id repeated ", uid, len(uid))
 		}
 		uids[uid] = true
 	}
 }
 
 func TestShortUniqueId(t *testing.T) {
-	fmt.Println(u.ShortUniqueId(), len(u.ShortUniqueId()))
+	fmt.Println(u.MakeId(20), len(u.MakeId(20)))
 	uids := map[string]bool{}
-	for i := 0; i < 100000; i++ {
-		uid := u.UniqueId()
-		if uids[uid] {
-			t.Error("short unique id repeated ", uids, uid)
+	for range 100000 {
+		uid := u.MakeId(20)
+		if uids[uid] || len(uid) != 20 {
+			t.Error("short unique id repeated ", uid, len(uid))
 		}
 		uids[uid] = true
 	}

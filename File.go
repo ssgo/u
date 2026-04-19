@@ -54,17 +54,14 @@ var memFilesByDir = make(map[string][]MemFile)
 var memFilesLock sync.RWMutex
 
 func (mf *MemFile) GetData() []byte {
-	if mf.SafeData != nil {
-		return mf.SafeData.Open().Data
-	}
 	if mf.Compressed {
 		return GunzipN(mf.Data)
 	}
 	return mf.Data
 }
 
-func (mf *MemFile) GetSafeData() *SafeBuf {
-	return mf.SafeData
+func (mf *MemFile) GetSafeData() *SecretPlaintext {
+	return mf.SafeData.Open()
 }
 
 func GetAbsFilename(filename string) string {
@@ -134,21 +131,29 @@ func loadFileToMemory(filename string, compress bool, isSafe bool) {
 				ModTime: info.ModTime(),
 				IsDir:   true,
 				Size:    info.Size(),
-				Data:    nil,
 			})
 			if files, err := os.ReadDir(filename); err == nil {
 				for _, file := range files {
-					LoadFileToMemory(filepath.Join(filename, file.Name()))
+					loadFileToMemory(filepath.Join(filename, file.Name()), compress, isSafe)
 				}
 			}
 		} else {
 			if data, err := ReadFileBytes(filename); err == nil {
 				compressed := false
+				var dataBuf *SafeBuf
 				if compress {
 					if data2, err := Gzip(data); err == nil {
+						if isSafe {
+							ZeroMemory(data) // 安全模式下，清空原始数据
+						}
 						data = data2
 						compressed = true
 					}
+				}
+				if isSafe {
+					dataBuf = NewSafeBuf(data)
+					ZeroMemory(data) // 安全模式下，清空原始数据（或压缩后的明文数据）
+					data = nil
 				}
 				AddFileToMemory(MemFile{
 					Name:       filename,
@@ -156,6 +161,7 @@ func loadFileToMemory(filename string, compress bool, isSafe bool) {
 					IsDir:      false,
 					Size:       info.Size(),
 					Data:       data,
+					SafeData:   dataBuf,
 					Compressed: compressed,
 				})
 			}
@@ -755,8 +761,8 @@ func FixPath(path string) string {
 var fileLocksLock = sync.Mutex{}
 var fileLocks = map[string]*sync.Mutex{}
 
-func LoadX(filename string, to interface{}) error {
-	var in = map[string]interface{}{}
+func LoadX(filename string, to any) error {
+	var in = map[string]any{}
 	if err := Load(filename, &in); err == nil {
 		Convert(in, to)
 		return nil
@@ -765,7 +771,7 @@ func LoadX(filename string, to interface{}) error {
 	}
 }
 
-func Load(filename string, to interface{}) error {
+func Load(filename string, to any) error {
 	if strings.HasSuffix(filename, "yml") || strings.HasSuffix(filename, "yaml") {
 		return load(filename, true, to)
 	} else {
@@ -773,15 +779,15 @@ func Load(filename string, to interface{}) error {
 	}
 }
 
-func LoadYaml(filename string, to interface{}) error {
+func LoadYaml(filename string, to any) error {
 	return load(filename, true, to)
 }
 
-func LoadJson(filename string, to interface{}) error {
+func LoadJson(filename string, to any) error {
 	return load(filename, false, to)
 }
 
-func load(filename string, isYaml bool, to interface{}) error {
+func load(filename string, isYaml bool, to any) error {
 	if mf := ReadFileFromMemory(filename); mf != nil {
 		if isYaml {
 			return yaml.Unmarshal(mf.Data, to)
@@ -860,7 +866,7 @@ func CopyFile(from, to string) error {
 	}
 }
 
-func Save(filename string, data interface{}) error {
+func Save(filename string, data any) error {
 	if strings.HasSuffix(filename, "yml") || strings.HasSuffix(filename, "yaml") {
 		return save(filename, true, data, true)
 	} else {
@@ -868,19 +874,19 @@ func Save(filename string, data interface{}) error {
 	}
 }
 
-func SaveYaml(filename string, data interface{}) error {
+func SaveYaml(filename string, data any) error {
 	return save(filename, true, data, true)
 }
 
-func SaveJson(filename string, data interface{}) error {
+func SaveJson(filename string, data any) error {
 	return save(filename, false, data, false)
 }
 
-func SaveJsonP(filename string, data interface{}) error {
+func SaveJsonP(filename string, data any) error {
 	return save(filename, false, data, true)
 }
 
-func save(filename string, isYaml bool, data interface{}, indent bool) error {
+func save(filename string, isYaml bool, data any, indent bool) error {
 	var buf []byte
 	var err error
 	if isYaml {
